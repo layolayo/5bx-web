@@ -1,0 +1,98 @@
+# Public HTTPS block for primary instance (port 5000)
+layolayo.synology.me {
+    # Block automated vulnerability scanners and nuisance requests
+    @blocked_scanners {
+        path /.git/* /.git
+        path /.env /.env.*
+        path /wp-admin/* /wp-login.php /wp-config.php
+        path /xmlrpc.php
+        path /.svn/* /.svn
+        path /.DS_Store
+        path /admin/* /administrator/*
+        path /backup/* /backups/*
+        path /phpinfo.php /info.php
+        path /service-account.json /sa.json /gcp-key.json /credentials.json /google-credentials.json
+    }
+    
+    # Respond with 404 (pretend the path doesn't exist) and close the TCP connection
+    respond @blocked_scanners "Not Found" 404 {
+        close
+    }
+
+    reverse_proxy localhost:5000
+    encode gzip zstd
+}
+
+# Public HTTPS block for second instance (port 5001)
+second.layolayo.synology.me {
+    # Block automated vulnerability scanners and nuisance requests
+    @blocked_scanners {
+        path /.git/* /.git
+        path /.env /.env.*
+        path /wp-admin/* /wp-login.php /wp-config.php
+        path /xmlrpc.php
+        path /.svn/* /.svn
+        path /.DS_Store
+        path /admin/* /administrator/*
+        path /backup/* /backups/*
+        path /phpinfo.php /info.php
+        path /service-account.json /sa.json /gcp-key.json /credentials.json /google-credentials.json
+    }
+    
+    # Respond with 404 (pretend the path doesn't exist) and close the TCP connection
+    respond @blocked_scanners "Not Found" 404 {
+        close
+    }
+
+    reverse_proxy localhost:5001
+    encode gzip zstd
+}
+
+# Public HTTPS block for master management instance (port 5005)
+master.layolayo.synology.me {
+    # Block automated vulnerability scanners and nuisance requests
+    @blocked_scanners {
+        path /.git/* /.git
+        path /.env /.env.*
+        path /wp-admin/* /wp-login.php /wp-config.php
+        path /xmlrpc.php
+        path /.svn/* /.svn
+        path /.DS_Store
+        path /backup/* /backups/*
+        path /phpinfo.php /info.php
+        path /service-account.json /sa.json /gcp-key.json /credentials.json /google-credentials.json
+    }
+    
+    # Respond with 404 (pretend the path doesn't exist) and close the TCP connection
+    respond @blocked_scanners "Not Found" 404 {
+        close
+    }
+
+    reverse_proxy localhost:5005
+    encode gzip zstd
+}
+
+# Public HTTPS block for 5BX Web Application (port 8085)
+5bx.layolayo.synology.me {
+    # Block automated vulnerability scanners and nuisance requests
+    @blocked_scanners {
+        path /.git/* /.git
+        path /.env /.env.*
+        path /wp-admin/* /wp-login.php /wp-config.php
+        path /xmlrpc.php
+        path /.svn/* /.svn
+        path /.DS_Store
+        path /admin/* /administrator/*
+        path /backup/* /backups/*
+        path /phpinfo.php /info.php
+        path /service-account.json /sa.json /gcp-key.json /credentials.json /google-credentials.json
+    }
+    
+    # Respond with 404 (pretend the path doesn't exist) and close the TCP connection
+    respond @blocked_scanners "Not Found" 404 {
+        close
+    }
+
+    reverse_proxy localhost:8085
+    encode gzip zstd
+}
