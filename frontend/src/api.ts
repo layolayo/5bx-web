@@ -236,4 +236,22 @@ export async function deleteAccount(password: string): Promise<void> {
   localStorage.removeItem('5bx_badges');
 }
 
+export interface PilotRosterItem {
+  username: string;
+  age: number;
+  strength_chart: number;
+  strength_level_display: string;
+  cardio_chart: number;
+  cardio_level_display: string;
+  standing: string;
+}
+
+export async function getPilotRoster(): Promise<PilotRosterItem[]> {
+  const res = await fetch(`${BASE_URL}/auth/pilots`);
+  if (!res.ok) {
+    throw new Error('Failed to fetch pilot roster');
+  }
+  return await res.json();
+}
+
 

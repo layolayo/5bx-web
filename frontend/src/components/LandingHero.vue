@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { getPilotRoster, PilotRosterItem } from '../api';
 
 const emit = defineEmits<{
   (e: 'open-login', pilot?: { username: string }): void;
@@ -152,12 +153,15 @@ const movements = [
   }
 ];
 
-const pilotShortcuts = [
-  { name: 'Matthew', age: 52, level: 'C3 L7 (D) • C3 L12 (A+)' },
-  { name: 'Harvey', age: 22, level: 'C1 L1 (D-)' },
-  { name: 'Maya', age: 19, level: 'C1 L1 (D-)' },
-  { name: 'Test', age: 30, level: 'C1 L1 (D-)' },
-];
+const pilots = ref<PilotRosterItem[]>([]);
+
+onMounted(async () => {
+  try {
+    pilots.value = await getPilotRoster();
+  } catch (e) {
+    console.error('Failed to load pilot roster in hero:', e);
+  }
+});
 </script>
 
 <template>
@@ -224,8 +228,8 @@ const pilotShortcuts = [
         </button>
       </div>
 
-      <!-- Quick Pilot Access Pill Bar -->
-      <div class="max-w-3xl mx-auto p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-left">
+      <!-- Quick Pilot Access Pill Bar (Only shown if registered pilots exist) -->
+      <div v-if="pilots.length > 0" class="max-w-3xl mx-auto p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-left">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2.5">
           <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
             <span>✈️</span>
@@ -233,18 +237,18 @@ const pilotShortcuts = [
           </span>
           <span class="text-[11px] text-slate-500 font-mono">Password: FiveBX2026!</span>
         </div>
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2">
           <button
-            v-for="pilot in pilotShortcuts"
-            :key="pilot.name"
-            @click="emit('open-login', { username: pilot.name })"
+            v-for="pilot in pilots"
+            :key="pilot.username"
+            @click="emit('open-login', { username: pilot.username })"
             class="p-2.5 rounded-xl bg-slate-800/70 hover:bg-cyan-950/40 border border-slate-700/70 hover:border-cyan-500/50 text-left transition-all group cursor-pointer"
           >
             <div class="text-sm font-bold text-white group-hover:text-cyan-400 flex items-center justify-between">
-              <span>{{ pilot.name }}</span>
+              <span>{{ pilot.username }}</span>
               <span class="text-[10px] text-slate-400 font-normal">Age {{ pilot.age }}</span>
             </div>
-            <div class="text-[10px] text-emerald-400/90 font-mono mt-0.5 truncate">{{ pilot.level }}</div>
+            <div class="text-[10px] text-emerald-400/90 font-mono mt-0.5 truncate">{{ pilot.standing }}</div>
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, onMounted } from 'vue';
+import { getPilotRoster, PilotRosterItem } from '../api';
 
 const props = defineProps<{
   initialUsername?: string;
@@ -18,6 +19,15 @@ const password = ref(props.initialUsername ? 'FiveBX2026!' : '');
 const email = ref('');
 const dob = ref('1990-01-01');
 const errorMsg = ref('');
+const availablePilots = ref<PilotRosterItem[]>([]);
+
+onMounted(async () => {
+  try {
+    availablePilots.value = await getPilotRoster();
+  } catch (e) {
+    console.error('Failed to load roster:', e);
+  }
+});
 
 watch(() => props.initialUsername, (newVal) => {
   if (newVal) {
@@ -106,42 +116,20 @@ function selectPilot(name: string) {
       </div>
 
       <!-- Quick Pilot 1-Tap Selectors (Sign In Mode) -->
-      <div v-if="mode === 'login'" class="mb-5 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+      <div v-if="mode === 'login' && availablePilots.length > 0" class="mb-5 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
         <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-          One-Tap Pilot Selector (Dev / Family Accounts)
+          One-Tap Pilot Selector
         </span>
-        <div class="grid grid-cols-4 gap-1.5">
+        <div class="flex flex-wrap gap-1.5">
           <button
+            v-for="pilot in availablePilots"
+            :key="pilot.username"
             type="button"
-            @click="selectPilot('Matthew')"
-            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
-            :class="username.toLowerCase() === 'matthew' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
+            @click="selectPilot(pilot.username)"
+            class="flex-1 min-w-[70px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
+            :class="username.toLowerCase() === pilot.username.toLowerCase() ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
           >
-            Matthew
-          </button>
-          <button
-            type="button"
-            @click="selectPilot('Harvey')"
-            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
-            :class="username.toLowerCase() === 'harvey' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
-          >
-            Harvey
-          </button>
-          <button
-            type="button"
-            @click="selectPilot('Maya')"
-            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
-            :class="username.toLowerCase() === 'maya' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
-          >
-            Maya
-          </button>
-          <button
-            type="button"
-            @click="selectPilot('Test')"
-            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
-            :class="username.toLowerCase() === 'test' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
-          >
-            Test
+            {{ pilot.username }}
           </button>
         </div>
       </div>

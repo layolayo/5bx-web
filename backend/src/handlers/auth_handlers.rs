@@ -14,8 +14,8 @@ use crate::{
     config::Config,
     engine::{calculate_age, get_age_goal, get_level_display},
     models::{
-        ChangePasswordRequest, DeleteAccountRequest, LoginRequest, RegisterRequest, User,
-        UserProfileResponse,
+        ChangePasswordRequest, DeleteAccountRequest, LoginRequest, PilotRosterItem,
+        RegisterRequest, User, UserProfileResponse,
     },
 };
 
@@ -338,4 +338,31 @@ pub async fn delete_account(
     removal_cookie.set_max_age(time::Duration::seconds(0));
 
     Ok((jar.add(removal_cookie), Json(json!({"success": true, "message": "Account successfully deleted."}))))
+}
+
+pub async fn get_roster(
+    State((pool, _)): State<(PgPool, Config)>,
+) -> Result<Json<Vec<PilotRosterItem>>, (StatusCode, Json<serde_json::Value>)> {
+    let users = sqlx::query_as::<_, User>("SELECT * FROM users ORDER BY username ASC")
+        .fetch_all(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?;
+
+    let roster: Vec<PilotRosterItem> = users.into_iter().map(|u| {
+        let age = calculate_age(u.dob);
+        let s_disp = get_level_display(u.strength_level);
+        let c_disp = get_level_display(u.cardio_level);
+        let standing = format!("C{} {} | C{} {}", u.strength_chart, s_disp, u.cardio_chart, c_disp);
+        PilotRosterItem {
+            username: u.username,
+            age,
+            strength_chart: u.strength_chart,
+            strength_level_display: s_disp.to_string(),
+            cardio_chart: u.cardio_chart,
+            cardio_level_display: c_disp.to_string(),
+            standing,
+        }
+    }).collect();
+
+    Ok(Json(roster))
 }
