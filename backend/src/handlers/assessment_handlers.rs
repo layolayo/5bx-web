@@ -86,7 +86,6 @@ pub async fn get_layoff_status(
 }
 
 pub async fn evaluate_diagnostic(
-    _auth: AuthUser,
     State((pool, _)): State<(PgPool, Config)>,
     Json(payload): Json<EvaluateDiagnosticRequest>,
 ) -> Result<Json<DiagnosticPlacementResult>, (StatusCode, Json<serde_json::Value>)> {
