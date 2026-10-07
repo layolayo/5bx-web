@@ -157,7 +157,7 @@ pub async fn get_user_badges(
             let (title, badge_type, img, score) = if is_superman_elite {
                 (
                     format!("Superman Elite (Age {}-{} Standards)", min_a, max_a),
-                    "EliteSuperman".to_string(),
+                    "Elite Superman".to_string(),
                     "ELITESUPERMAN.png".to_string(),
                     e_score + 700,
                 )

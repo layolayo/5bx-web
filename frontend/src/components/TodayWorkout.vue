@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { TodayWorkout, UserProfile, EarnedBadge } from '../types';
 
-defineProps<{
+const props = defineProps<{
   workout: TodayWorkout;
   profile: UserProfile | null;
   highestBadge?: EarnedBadge | null;
@@ -16,6 +16,30 @@ const emit = defineEmits<{
 }>();
 
 const cardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
+
+const strengthExercises = computed(() => props.workout.exercises.filter((ex) => ex.exercise_number <= 4));
+const cardioExercise = computed(() => props.workout.exercises.find((ex) => ex.exercise_number === 5));
+
+const cardioDistanceMiles = computed(() => {
+  if (cardioChoice.value === 'run') {
+    return props.workout.cardio_chart === 1 ? 0.5 : 1.0;
+  }
+  if (cardioChoice.value === 'walk') {
+    return props.workout.cardio_chart === 1 ? 1.0 : 2.0;
+  }
+  return 0;
+});
+
+const treadmillSpeed = computed(() => {
+  const ex5 = cardioExercise.value;
+  if (!ex5) return { mph: 0, kph: 0 };
+  const targetSec = cardioChoice.value === 'run' ? ex5.alt_run_time_seconds : ex5.alt_walk_time_seconds;
+  if (!targetSec || targetSec <= 0) return { mph: 0, kph: 0 };
+  const hours = targetSec / 3600.0;
+  const mph = cardioDistanceMiles.value / hours;
+  const kph = mph * 1.60934;
+  return { mph, kph };
+});
 
 function formatMinutesSeconds(seconds: number) {
   if (!seconds || seconds <= 0) return '0s';
@@ -138,145 +162,254 @@ const muscleFocusMap: Record<number, string> = {
       </div>
     </div>
 
-    <!-- 5 Calibrated Movements Roster -->
-    <div class="space-y-4">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-xl font-black text-white uppercase tracking-tight">Today's Flight Roster</h3>
-          <p class="text-xs text-slate-400">Total duration: 11 minutes without inter-exercise pauses</p>
+    <!-- Grouped Mission Rosters -->
+    <div class="space-y-8">
+      <!-- 1. STRENGTH TRACK (Movements 1 to 4 - Green / Emerald Theme) -->
+      <div class="space-y-4">
+        <!-- Strength Track Header Line -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-emerald-500/40 gap-2">
+          <div class="flex items-center gap-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-md shadow-emerald-500/50 animate-pulse"></span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-black text-white uppercase tracking-tight">Strength Track</h3>
+                <span class="text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                  Movements 1 to 4 • 5 Minutes Total
+                </span>
+              </div>
+              <p class="text-xs text-slate-400">Core stabilization, spinal mobility & upper body resistance. Golden Rule applies.</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1 rounded-full self-start sm:self-auto">
+            Chart {{ workout.strength_chart }} Standards
+          </span>
         </div>
-        <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full">
-          Chart {{ workout.strength_chart }} Standards
-        </span>
-      </div>
 
-      <div class="grid grid-cols-1 gap-4">
-        <div
-          v-for="ex in workout.exercises"
-          :key="ex.exercise_number"
-          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all"
-        >
-          <!-- Left: Number & Illustration -->
-          <div class="flex items-center gap-4 w-full md:w-auto">
-            <!-- Exercise Number Badge -->
-            <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center font-black text-sm text-cyan-400 shrink-0 shadow-inner">
-              {{ ex.exercise_number }}
-            </div>
+        <!-- 4 Strength Exercise Cards -->
+        <div class="grid grid-cols-1 gap-3.5">
+          <div
+            v-for="ex in strengthExercises"
+            :key="ex.exercise_number"
+            class="glass-panel glass-panel-hover rounded-2xl p-5 border-l-4 border-l-emerald-500 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all"
+          >
+            <!-- Left: Number & Illustration -->
+            <div class="flex items-center gap-4 w-full md:w-auto">
+              <div class="w-10 h-10 rounded-xl bg-slate-950 border border-emerald-500/30 flex items-center justify-center font-black text-sm text-emerald-400 shrink-0 shadow-inner">
+                {{ ex.exercise_number }}
+              </div>
 
-            <!-- Historical RCAF Movement Diagram -->
-            <div class="w-36 h-24 bg-white rounded-xl p-2 flex items-center justify-center shrink-0 shadow-inner border border-slate-300">
-              <img :src="'/images/' + ex.image_path" :alt="ex.name" class="max-h-full max-w-full object-contain" />
-            </div>
+              <div class="w-36 h-24 bg-white rounded-xl p-2 flex items-center justify-center shrink-0 shadow-inner border border-slate-300">
+                <img :src="'/images/' + ex.image_path" :alt="ex.name" class="max-h-full max-w-full object-contain" />
+              </div>
 
-            <!-- Movement Identity on Mobile -->
-            <div class="md:hidden flex-1">
-              <h4 class="text-base font-bold text-white">{{ ex.name }}</h4>
-              <div class="text-[10px] font-mono text-cyan-400">
-                {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' min' : ex.time_limit_seconds + ' sec' }}
+              <div class="md:hidden flex-1">
+                <h4 class="text-base font-bold text-white">{{ ex.name }}</h4>
+                <div class="text-[10px] font-mono text-emerald-400">
+                  {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' min' : ex.time_limit_seconds + ' sec' }}
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Middle: Name, Muscle Focus & Posture Cues -->
-          <div class="flex-1">
-            <div class="hidden md:flex items-center gap-2.5 mb-1">
-              <h4 class="text-lg font-black text-white">{{ ex.name }}</h4>
-              <span class="text-[11px] font-mono font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/20">
-                {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' Minutes' : ex.time_limit_seconds + ' Seconds' }}
-              </span>
-            </div>
-
-            <div class="text-[11px] font-semibold text-cyan-400 uppercase tracking-wide mb-1.5">
-              {{ muscleFocusMap[ex.exercise_number] }}
-            </div>
-
-            <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
-              {{ ex.instructions }}
-            </p>
-
-            <!-- Movement 5 Interactive Cardio Discipline Switcher -->
-            <div v-if="ex.exercise_number === 5" class="mt-3 pt-3 border-t border-slate-800/80">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cardio Discipline Choice:</span>
-                <span class="text-[10px] font-mono text-cyan-400">Indoor or Outdoor Track</span>
+            <!-- Middle: Name, Muscle Focus & Posture Cues -->
+            <div class="flex-1">
+              <div class="hidden md:flex items-center gap-2.5 mb-1">
+                <h4 class="text-lg font-black text-white">{{ ex.name }}</h4>
+                <span class="text-[11px] font-mono font-bold text-emerald-300 bg-emerald-950/60 px-2 py-0.5 rounded border border-emerald-500/20">
+                  {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' Minutes' : ex.time_limit_seconds + ' Seconds' }}
+                </span>
               </div>
-              <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
-                <button
-                  type="button"
-                  @click="cardioChoice = 'stationary'"
-                  class="py-2 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
-                  :class="cardioChoice === 'stationary' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
-                >
-                  <span class="text-sm">👟</span>
-                  <span>Stationary Run</span>
-                </button>
-                <button
-                  type="button"
-                  @click="cardioChoice = 'run'"
-                  class="py-2 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
-                  :class="cardioChoice === 'run' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
-                >
-                  <span class="text-sm">🏃</span>
-                  <span>1-Mile Jog/Run</span>
-                </button>
-                <button
-                  type="button"
-                  @click="cardioChoice = 'walk'"
-                  class="py-2 px-2.5 rounded-xl text-[11px] font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
-                  :class="cardioChoice === 'walk' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
-                >
-                  <span class="text-sm">🚶</span>
-                  <span>2-Mile Walk</span>
-                </button>
-              </div>
-            </div>
-          </div>
 
-          <!-- Right: Calibrated Target Pill -->
-          <div class="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center p-3 md:p-4 rounded-xl bg-slate-950/90 border border-slate-800 shrink-0 min-w-[140px]">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Required Target</span>
-            
-            <!-- Standard Exercises 1-4 -->
-            <template v-if="ex.exercise_number < 5">
-              <div class="text-2xl font-black text-white tabular-nums tracking-tight">
+              <div class="text-[11px] font-semibold text-emerald-400 uppercase tracking-wide mb-1.5">
+                {{ muscleFocusMap[ex.exercise_number] }}
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                {{ ex.instructions }}
+              </p>
+            </div>
+
+            <!-- Right: Calibrated Target Pill -->
+            <div class="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center p-3 md:p-4 rounded-xl bg-slate-950/90 border border-slate-800 shrink-0 min-w-[130px]">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Required Target</span>
+              <div class="text-2xl font-black text-emerald-400 tabular-nums tracking-tight">
                 {{ ex.target_reps }}
                 <span class="text-xs font-normal text-slate-400">reps</span>
               </div>
-            </template>
+            </div>
+          </div>
+        </div>
+      </div>
 
-            <!-- Exercise 5 Cardio Dynamic Target based on selection -->
-            <template v-else>
-              <!-- Stationary Run Option -->
+      <!-- 2. CARDIO TRACK (Movement 5 - Cyan Theme) -->
+      <div v-if="cardioExercise" class="space-y-4">
+        <!-- Cardio Track Header Line -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-cyan-500/40 gap-2">
+          <div class="flex items-center gap-3">
+            <span class="w-3.5 h-3.5 rounded-full bg-cyan-400 shadow-md shadow-cyan-500/50 animate-pulse"></span>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-black text-white uppercase tracking-tight">Cardio Track</h3>
+                <span class="text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full">
+                  Movement 5 • 6 Minutes / Calibrated Stride Target
+                </span>
+              </div>
+              <p class="text-xs text-slate-400">Cardiovascular conditioning & aerobic capacity. Choose stationary or running machine / outdoor.</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-cyan-300 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full self-start sm:self-auto">
+            Chart {{ workout.cardio_chart }} Standards
+          </span>
+        </div>
+
+        <!-- Cardio Exercise Card -->
+        <div class="glass-panel glass-panel-hover rounded-2xl p-5 border-l-4 border-l-cyan-500 transition-all">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+            <!-- Left: Number & Diagram -->
+            <div class="flex items-center gap-4 w-full md:w-auto">
+              <div class="w-10 h-10 rounded-xl bg-slate-950 border border-cyan-500/30 flex items-center justify-center font-black text-sm text-cyan-400 shrink-0 shadow-inner">
+                5
+              </div>
+
+              <div class="w-36 h-24 bg-white rounded-xl p-2 flex items-center justify-center shrink-0 shadow-inner border border-slate-300">
+                <img :src="'/images/' + cardioExercise.image_path" :alt="cardioExercise.name" class="max-h-full max-w-full object-contain" />
+              </div>
+
+              <div class="md:hidden flex-1">
+                <h4 class="text-base font-bold text-white">{{ cardioExercise.name }}</h4>
+                <div class="text-[10px] font-mono text-cyan-400">6 Minutes</div>
+              </div>
+            </div>
+
+            <!-- Middle: Description & Discipline Selector -->
+            <div class="flex-1 w-full">
+              <div class="hidden md:flex items-center gap-2.5 mb-1">
+                <h4 class="text-lg font-black text-white">{{ cardioExercise.name }}</h4>
+                <span class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/20">
+                  6 Minutes
+                </span>
+              </div>
+
+              <div class="text-[11px] font-semibold text-cyan-400 uppercase tracking-wide mb-1.5">
+                {{ muscleFocusMap[5] }}
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
+                {{ cardioExercise.instructions }}
+              </p>
+
+              <!-- Interactive Cardio Discipline Switcher -->
+              <div class="mt-4 pt-3 border-t border-slate-800/80">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Choose Cardio Discipline:</span>
+                  <span class="text-[10px] font-mono text-cyan-400">Indoor or Running Machine</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    @click="cardioChoice = 'stationary'"
+                    class="py-2 px-2.5 rounded-xl text-xs font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                    :class="cardioChoice === 'stationary' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
+                  >
+                    <span class="text-sm">👟</span>
+                    <span>Stationary Run</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="cardioChoice = 'run'"
+                    class="py-2 px-2.5 rounded-xl text-xs font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                    :class="cardioChoice === 'run' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
+                  >
+                    <span class="text-sm">🏃</span>
+                    <span>1-Mile Jog/Run</span>
+                  </button>
+                  <button
+                    type="button"
+                    @click="cardioChoice = 'walk'"
+                    class="py-2 px-2.5 rounded-xl text-xs font-bold tracking-tight transition-all flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                    :class="cardioChoice === 'walk' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
+                  >
+                    <span class="text-sm">🚶</span>
+                    <span>2-Mile Walk</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Dynamic Target Pill -->
+            <div class="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center p-4 rounded-xl bg-slate-950/90 border border-slate-800 shrink-0 min-w-[160px]">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Required Target</span>
+
+              <!-- Stationary Option Target -->
               <div v-if="cardioChoice === 'stationary'" class="text-right">
-                <div class="text-2xl font-black text-white tabular-nums tracking-tight">
-                  {{ ex.target_reps }}
+                <div class="text-2xl font-black text-cyan-400 tabular-nums tracking-tight">
+                  {{ cardioExercise.target_reps }}
                   <span class="text-xs font-normal text-slate-400">runs</span>
                 </div>
-                <div class="text-[11px] font-semibold text-cyan-400 mt-0.5">
+                <div class="text-[11px] font-semibold text-cyan-300 mt-0.5">
                   + 10 scissor jumps / 75 steps
                 </div>
               </div>
 
-              <!-- 1-Mile Outdoor Jog/Run Option -->
+              <!-- 1-Mile Run Option Target -->
               <div v-else-if="cardioChoice === 'run'" class="text-right">
                 <div class="text-xl font-black text-amber-300 tabular-nums tracking-tight">
-                  &lt; {{ formatMinutesSeconds(ex.alt_run_time_seconds) }}
+                  &lt; {{ formatMinutesSeconds(cardioExercise.alt_run_time_seconds) }}
                 </div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">
-                  1-Mile Run ({{ ex.alt_run_time_seconds }}s)
+                  {{ cardioDistanceMiles }} Mile ({{ cardioExercise.alt_run_time_seconds }}s)
                 </div>
               </div>
 
-              <!-- 2-Mile Walk Option -->
+              <!-- 2-Mile Walk Option Target -->
               <div v-else class="text-right">
                 <div class="text-xl font-black text-teal-300 tabular-nums tracking-tight">
-                  &lt; {{ formatMinutesSeconds(ex.alt_walk_time_seconds) }}
+                  &lt; {{ formatMinutesSeconds(cardioExercise.alt_walk_time_seconds) }}
                 </div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">
-                  2-Mile Walk ({{ ex.alt_walk_time_seconds }}s)
+                  {{ cardioDistanceMiles }} Miles ({{ cardioExercise.alt_walk_time_seconds }}s)
                 </div>
               </div>
-            </template>
+            </div>
+          </div>
+
+          <!-- Treadmill Speed Calibration Banner (Run / Walk) -->
+          <div
+            v-if="cardioChoice !== 'stationary' && treadmillSpeed.mph > 0"
+            class="mt-4 bg-gradient-to-r from-cyan-950/70 via-slate-900 to-cyan-950/50 border border-cyan-500/40 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg"
+          >
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-xl shrink-0">
+                ⚙️
+              </div>
+              <div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-cyan-400 block">
+                  Treadmill Running Machine Setting
+                </span>
+                <div class="text-sm font-black text-white mt-0.5">
+                  Set speed to at least <span class="text-cyan-300 font-mono">{{ treadmillSpeed.mph.toFixed(1) }} mph</span> (<span class="text-cyan-300 font-mono">{{ treadmillSpeed.kph.toFixed(1) }} km/h</span>)
+                </div>
+                <span class="text-[11px] text-slate-400 block">
+                  Complete {{ cardioDistanceMiles }} mile(s) within {{ formatMinutesSeconds(cardioChoice === 'run' ? cardioExercise.alt_run_time_seconds : cardioExercise.alt_walk_time_seconds) }} to pass this rung.
+                </span>
+              </div>
+            </div>
+            <div class="bg-cyan-950/90 border border-cyan-500/30 px-3 py-1.5 rounded-lg text-right self-stretch sm:self-center font-mono">
+              <div class="text-[10px] text-slate-400 uppercase">Pace Target</div>
+              <div class="text-xs font-bold text-cyan-300">
+                {{ Math.floor((cardioChoice === 'run' ? cardioExercise.alt_run_time_seconds : cardioExercise.alt_walk_time_seconds) / 60) }}m {{ (cardioChoice === 'run' ? cardioExercise.alt_run_time_seconds : cardioExercise.alt_walk_time_seconds) % 60 }}s / mi
+              </div>
+            </div>
+          </div>
+
+          <!-- Stationary Run Info Banner -->
+          <div
+            v-else-if="cardioChoice === 'stationary'"
+            class="mt-4 bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 flex items-center gap-3"
+          >
+            <span class="text-lg">👟</span>
+            <div>
+              <span class="text-white font-bold">Stationary Run Protocol:</span> Run on the spot lifting feet 4 inches off the floor (1 step counted per forward left foot contact). Perform 10 scissor jumps every 75 steps (6 minutes continuous).
+            </div>
           </div>
         </div>
       </div>

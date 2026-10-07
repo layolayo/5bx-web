@@ -17,8 +17,7 @@ const reps3 = ref(props.workout.exercises[2]?.target_reps || 0);
 const reps4 = ref(props.workout.exercises[3]?.target_reps || 0);
 const reps5 = ref(props.workout.exercises[4]?.target_reps || 0);
 const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
-const cardioMinutes = ref<number | ''>('');
-const cardioSeconds = ref<number | ''>('');
+const cardioTimeString = ref('');
 const notes = ref('');
 
 const currentCardioTarget = computed(() => {
@@ -29,10 +28,42 @@ const currentCardioTarget = computed(() => {
   return ex5.target_reps;
 });
 
-const totalSecondsEntered = computed(() => {
-  const m = typeof cardioMinutes.value === 'number' ? cardioMinutes.value : 0;
-  const s = typeof cardioSeconds.value === 'number' ? cardioSeconds.value : 0;
-  return m * 60 + s;
+const cardioDistanceMiles = computed(() => {
+  if (cardioMode.value === 'run') {
+    return props.workout.cardio_chart === 1 ? 0.5 : 1.0;
+  }
+  if (cardioMode.value === 'walk') {
+    return props.workout.cardio_chart === 1 ? 1.0 : 2.0;
+  }
+  return 0;
+});
+
+function parseTimeStringToSeconds(str: string): number {
+  if (!str) return 0;
+  const trimmed = str.trim();
+  if (trimmed.includes(':')) {
+    const parts = trimmed.split(':');
+    const mins = parseInt(parts[0], 10) || 0;
+    const secs = parseInt(parts[1], 10) || 0;
+    return mins * 60 + secs;
+  }
+  const num = parseFloat(trimmed);
+  if (!isNaN(num)) {
+    if (num > 100) return Math.round(num);
+    return Math.round(num * 60);
+  }
+  return 0;
+}
+
+const totalSecondsEntered = computed(() => parseTimeStringToSeconds(cardioTimeString.value));
+
+const achievedSpeed = computed(() => {
+  const sec = totalSecondsEntered.value;
+  if (sec <= 0 || cardioDistanceMiles.value <= 0) return { mph: 0, kph: 0 };
+  const hours = sec / 3600.0;
+  const mph = cardioDistanceMiles.value / hours;
+  const kph = mph * 1.60934;
+  return { mph, kph };
 });
 
 function formatDuration(sec: number) {
@@ -229,43 +260,47 @@ function submitLog() {
             <span class="text-xs text-slate-400 shrink-0">steps completed</span>
           </div>
 
-          <!-- Run / Walk Minutes & Seconds Input -->
+          <!-- Run / Walk mm:ss Time Input -->
           <div v-else class="space-y-2">
-            <div class="grid grid-cols-2 gap-2">
-              <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Minutes</label>
+            <div>
+              <label class="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-1">
+                Duration Taken (mm:ss)
+              </label>
+              <div class="relative">
                 <input
-                  v-model.number="cardioMinutes"
-                  type="number"
+                  v-model="cardioTimeString"
+                  type="text"
                   required
-                  min="0"
-                  max="120"
-                  placeholder="0"
-                  class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                  placeholder="e.g. 07:30"
+                  class="w-full bg-slate-900 text-cyan-300 font-mono font-black text-2xl p-3 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none tracking-widest placeholder:text-slate-600"
                 />
+                <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[11px] font-mono text-slate-500">
+                  mm:ss
+                </span>
               </div>
-              <div>
-                <label class="text-[10px] text-slate-400 block mb-1">Seconds</label>
-                <input
-                  v-model.number="cardioSeconds"
-                  type="number"
-                  required
-                  min="0"
-                  max="59"
-                  placeholder="0"
-                  class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
-                />
-              </div>
+              <span class="text-[10px] text-slate-500 mt-1 block text-center">
+                Enter your total running or walking time (e.g. 07:30 or 7:30)
+              </span>
             </div>
 
-            <!-- Live Validation Indicator -->
-            <div v-if="totalSecondsEntered > 0" class="text-xs font-mono p-2 rounded-lg" :class="totalSecondsEntered <= currentCardioTarget ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'">
-              <span v-if="totalSecondsEntered <= currentCardioTarget">
-                ✓ Recorded time: {{ totalSecondsEntered }}s — Standard met!
-              </span>
-              <span v-else>
-                ⚠️ Recorded time: {{ totalSecondsEntered }}s — Exceeds {{ currentCardioTarget }}s standard.
-              </span>
+            <!-- Live Validation & Treadmill Speed Indicator -->
+            <div
+              v-if="totalSecondsEntered > 0"
+              class="text-xs font-mono p-3 rounded-xl border transition-all"
+              :class="totalSecondsEntered <= currentCardioTarget ? 'bg-emerald-950/70 text-emerald-300 border-emerald-500/40' : 'bg-amber-950/70 text-amber-300 border-amber-500/40'"
+            >
+              <div class="flex items-center justify-between font-bold">
+                <span>
+                  {{ totalSecondsEntered <= currentCardioTarget ? '✓ Standard Met!' : '⚠️ Standard Exceeded' }}
+                </span>
+                <span>{{ Math.floor(totalSecondsEntered / 60) }}m {{ totalSecondsEntered % 60 }}s ({{ totalSecondsEntered }}s)</span>
+              </div>
+              <div class="text-[11px] text-slate-300 mt-1.5 flex items-center justify-between">
+                <span>Equivalent Pace:</span>
+                <span class="font-bold text-white">
+                  {{ achievedSpeed.mph.toFixed(1) }} mph ({{ achievedSpeed.kph.toFixed(1) }} km/h)
+                </span>
+              </div>
             </div>
           </div>
         </div>

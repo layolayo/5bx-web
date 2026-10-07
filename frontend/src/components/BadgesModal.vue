@@ -8,6 +8,12 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void;
 }>();
+
+function formatBadgeType(type: string): string {
+  if (!type) return '';
+  if (type === 'EliteSuperman') return 'Elite Superman';
+  return type.replace(/([a-z])([A-Z])/g, '$1 $2');
+}
 </script>
 
 <template>
@@ -63,7 +69,7 @@ const emit = defineEmits<{
                   class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
                   :class="b.is_highest ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
                 >
-                  {{ b.is_highest ? 'Highest Honour' : b.badge_type }}
+                  {{ b.is_highest ? 'Highest Honour' : formatBadgeType(b.badge_type) }}
                 </span>
                 <span class="text-[10px] font-mono text-emerald-400 font-bold truncate">{{ b.status_text }}</span>
               </div>
