@@ -170,6 +170,7 @@ export interface LayoffStatus {
 }
 
 export interface EvaluateDiagnosticPayload {
+  candidate_chart?: number;
   reps_1: number;
   reps_2: number;
   reps_3: number;

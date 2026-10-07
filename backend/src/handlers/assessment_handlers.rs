@@ -111,7 +111,10 @@ pub async fn evaluate_diagnostic(
     let cardio_reps = payload.reps_5.unwrap_or(0).max(0);
     let cardio_duration = payload.cardio_duration_secs.unwrap_or(0).max(0);
 
+    let candidate_chart = payload.candidate_chart.unwrap_or(1);
+
     let result = evaluate_diagnostic_placement(
+        candidate_chart,
         &strength_reps,
         &payload.cardio_mode,
         cardio_reps,

@@ -153,36 +153,41 @@ pub struct DiagnosticPlacementResult {
 }
 
 pub fn evaluate_diagnostic_placement(
+    candidate_chart: i32,
     strength_reps: &[i32; 4],
     cardio_mode: &str,
     cardio_reps: i32,
     cardio_duration_secs: i32,
     all_charts: &[crate::models::ExerciseChart],
 ) -> DiagnosticPlacementResult {
-    // 1. Evaluate Strength (Ex 1-4) across all charts
-    let mut best_s_chart = 1;
-    let mut best_s_level = 1;
+    let target_chart = candidate_chart.clamp(1, 6);
+    let chart_levels: Vec<&crate::models::ExerciseChart> = all_charts
+        .iter()
+        .filter(|c| c.chart == target_chart)
+        .collect();
 
-    for c in all_charts {
+    // 1. Evaluate Strength (Ex 1-4) across the levels of the candidate chart
+    let mut best_s_level = 1;
+    let mut s_qualified = false;
+
+    for c in &chart_levels {
         if strength_reps[0] >= c.ex1
             && strength_reps[1] >= c.ex2
             && strength_reps[2] >= c.ex3
             && strength_reps[3] >= c.ex4
         {
-            let score = get_total_score(c.chart, c.level);
-            let current_best = get_total_score(best_s_chart, best_s_level);
-            if score > current_best {
-                best_s_chart = c.chart;
+            s_qualified = true;
+            if c.level >= best_s_level {
                 best_s_level = c.level;
             }
         }
     }
 
-    // 2. Evaluate Cardio (Ex 5) across all charts
-    let mut best_c_chart = 1;
+    // 2. Evaluate Cardio (Ex 5) across the levels of the candidate chart
     let mut best_c_level = 1;
+    let mut c_qualified = false;
 
-    for c in all_charts {
+    for c in &chart_levels {
         let meets_cardio = if cardio_mode == "run" {
             cardio_duration_secs > 0 && cardio_duration_secs <= c.ex5_run
         } else if cardio_mode == "walk" {
@@ -192,28 +197,47 @@ pub fn evaluate_diagnostic_placement(
         };
 
         if meets_cardio {
-            let score = get_total_score(c.chart, c.level);
-            let current_best = get_total_score(best_c_chart, best_c_level);
-            if score > current_best {
-                best_c_chart = c.chart;
+            c_qualified = true;
+            if c.level >= best_c_level {
                 best_c_level = c.level;
             }
         }
     }
 
-    let s_disp = format!("Chart {} • Level {} ({})", best_s_chart, best_s_level, get_level_display(best_s_level));
-    let c_disp = format!("Chart {} • Level {} ({})", best_c_chart, best_c_level, get_level_display(best_c_level));
-    let summary = format!(
-        "Diagnostic Placement calibrated Strength to {} and Cardio to {}.",
-        s_disp, c_disp
-    );
+    // If strength_reps cleared all 12 levels in candidate chart and candidate_chart < 6
+    let (final_s_chart, final_s_level) = if s_qualified && best_s_level == 12 && target_chart < 6 {
+        (target_chart + 1, 1)
+    } else {
+        (target_chart, best_s_level)
+    };
+
+    let (final_c_chart, final_c_level) = if c_qualified && best_c_level == 12 && target_chart < 6 {
+        (target_chart + 1, 1)
+    } else {
+        (target_chart, best_c_level)
+    };
+
+    let s_disp = format!("Chart {} • Level {} ({})", final_s_chart, final_s_level, get_level_display(final_s_level));
+    let c_disp = format!("Chart {} • Level {} ({})", final_c_chart, final_c_level, get_level_display(final_c_level));
+
+    let summary = if s_qualified && c_qualified {
+        if best_s_level == 12 && target_chart < 6 {
+            format!("Outstanding performance: you cleared Chart {} standards! Recommended starting at {}.", target_chart, s_disp)
+        } else {
+            format!("Diagnostic Placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+        }
+    } else if !s_qualified && target_chart > 1 {
+        format!("Performance below Chart {} Level 1 threshold. Recommended baseline: Chart {} Level 12.", target_chart, target_chart - 1)
+    } else {
+        format!("Diagnostic Placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+    };
 
     DiagnosticPlacementResult {
-        strength_chart: best_s_chart,
-        strength_level: best_s_level,
+        strength_chart: final_s_chart,
+        strength_level: final_s_level,
         strength_display: s_disp,
-        cardio_chart: best_c_chart,
-        cardio_level: best_c_level,
+        cardio_chart: final_c_chart,
+        cardio_level: final_c_level,
         cardio_display: c_disp,
         summary,
     }
@@ -685,14 +709,14 @@ mod tests {
         ];
 
         // Moderate reps qualifying for Chart 1 Level 6
-        let res = evaluate_diagnostic_placement(&[10, 12, 14, 8], "stationary", 290, 0, &all_charts);
+        let res = evaluate_diagnostic_placement(1, &[10, 12, 14, 8], "stationary", 290, 0, &all_charts);
         assert_eq!(res.strength_chart, 1);
         assert_eq!(res.strength_level, 6);
         assert_eq!(res.cardio_chart, 1);
         assert_eq!(res.cardio_level, 6);
 
         // Advanced reps qualifying for Chart 2 Level 1
-        let res2 = evaluate_diagnostic_placement(&[15, 15, 18, 10], "stationary", 310, 0, &all_charts);
+        let res2 = evaluate_diagnostic_placement(2, &[15, 15, 18, 10], "stationary", 310, 0, &all_charts);
         assert_eq!(res2.strength_chart, 2);
         assert_eq!(res2.strength_level, 1);
         assert_eq!(res2.cardio_chart, 2);

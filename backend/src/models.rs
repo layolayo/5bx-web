@@ -223,6 +223,7 @@ pub struct LayoffStatusResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct EvaluateDiagnosticRequest {
+    pub candidate_chart: Option<i32>,
     pub reps_1: i32,
     pub reps_2: i32,
     pub reps_3: i32,
