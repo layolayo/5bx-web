@@ -40,17 +40,6 @@ pub struct UserProfileResponse {
     pub age_target_display: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PilotRosterItem {
-    pub username: String,
-    pub age: i32,
-    pub strength_chart: i32,
-    pub strength_level_display: String,
-    pub cardio_chart: i32,
-    pub cardio_level_display: String,
-    pub standing: String,
-}
-
 #[derive(Debug, Deserialize)]
 pub struct RegisterRequest {
     pub username: String,

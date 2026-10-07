@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
-import { getPilotRoster, PilotRosterItem } from '../api';
+import { ref, watch } from 'vue';
 
 const props = defineProps<{
   initialUsername?: string;
@@ -15,24 +14,14 @@ const emit = defineEmits<{
 const mode = ref<'login' | 'register'>('login');
 
 const username = ref(props.initialUsername || '');
-const password = ref(props.initialUsername ? 'FiveBX2026!' : '');
+const password = ref('');
 const email = ref('');
 const dob = ref('1990-01-01');
 const errorMsg = ref('');
-const availablePilots = ref<PilotRosterItem[]>([]);
-
-onMounted(async () => {
-  try {
-    availablePilots.value = await getPilotRoster();
-  } catch (e) {
-    console.error('Failed to load roster:', e);
-  }
-});
 
 watch(() => props.initialUsername, (newVal) => {
   if (newVal) {
     username.value = newVal;
-    password.value = 'FiveBX2026!';
   }
 });
 
@@ -55,12 +44,6 @@ function submitRegister() {
     password: password.value,
     dob: dob.value,
   });
-}
-
-function selectPilot(name: string) {
-  username.value = name;
-  password.value = 'FiveBX2026!';
-  errorMsg.value = '';
 }
 </script>
 
@@ -113,25 +96,6 @@ function selectPilot(name: string) {
       <div v-if="errorMsg" class="mb-4 bg-red-500/15 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2">
         <span>⚠️</span>
         <span>{{ errorMsg }}</span>
-      </div>
-
-      <!-- Quick Pilot 1-Tap Selectors (Sign In Mode) -->
-      <div v-if="mode === 'login' && availablePilots.length > 0" class="mb-5 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
-        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
-          One-Tap Pilot Selector
-        </span>
-        <div class="flex flex-wrap gap-1.5">
-          <button
-            v-for="pilot in availablePilots"
-            :key="pilot.username"
-            type="button"
-            @click="selectPilot(pilot.username)"
-            class="flex-1 min-w-[70px] px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
-            :class="username.toLowerCase() === pilot.username.toLowerCase() ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
-          >
-            {{ pilot.username }}
-          </button>
-        </div>
       </div>
 
       <!-- Login Form -->
