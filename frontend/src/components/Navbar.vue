@@ -15,118 +15,137 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="no-print bg-slate-900 border-b border-slate-800 sticky top-0 z-40">
-    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-      <!-- Brand Logo & Title -->
-      <div class="flex items-center gap-3 cursor-pointer" @click="emit('navigate', 'workout')">
-        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-lg shadow-lg">
+  <header class="no-print bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 transition-all">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- Brand Emblem & Identity -->
+      <div class="flex items-center gap-3 cursor-pointer select-none" @click="emit('navigate', 'workout')">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center font-black text-slate-950 text-base shadow-lg shadow-cyan-500/20 tracking-tighter">
           5BX
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white leading-tight">RCAF 5BX Plan</h1>
-          <p class="text-[11px] text-slate-400">11 Minutes • No Equipment</p>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base font-black text-white uppercase tracking-tight leading-none">RCAF 5BX</h1>
+            <span class="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-500/30 text-cyan-400">
+              Protocol
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium">11 Minutes • Zero Equipment</p>
         </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="hidden sm:flex items-center gap-1 bg-slate-800/60 p-1 rounded-xl border border-slate-700/60">
+      <!-- Navigation Tabs (When signed in) -->
+      <nav v-if="profile" class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
         <button
           @click="emit('navigate', 'workout')"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          :class="activeTab === 'workout' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'workout' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
-          Today's Plan
+          Daily Mission
         </button>
         <button
           @click="emit('navigate', 'sheet')"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          :class="activeTab === 'sheet' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'sheet' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
-          Print Form
+          Print Gym Sheet
         </button>
         <button
           @click="emit('navigate', 'history')"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          :class="activeTab === 'history' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'history' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
-          History
+          Flight Log
         </button>
         <button
           @click="emit('navigate', 'badges')"
-          class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
-          :class="activeTab === 'badges' ? 'bg-blue-600 text-white shadow' : 'text-slate-300 hover:text-white'"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'badges' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Milestones
         </button>
       </nav>
 
-      <!-- User Account Actions -->
-      <div class="flex items-center gap-2">
-        <div v-if="profile" class="flex items-center gap-2">
+      <!-- Public Nav (When logged out) -->
+      <nav v-else class="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-300">
+        <button @click="emit('navigate', 'sheet')" class="hover:text-cyan-400 transition-colors cursor-pointer">
+          Single-Sheet Gym Form
+        </button>
+      </nav>
+
+      <!-- User Account Cockpit Actions -->
+      <div class="flex items-center gap-2.5">
+        <!-- Logged In Pilot Profile Card -->
+        <div v-if="profile" class="flex items-center gap-3">
           <div class="text-right hidden sm:block">
-            <div class="text-xs font-bold text-white flex items-center gap-1.5 justify-end">
+            <div class="text-xs font-black text-white flex items-center gap-1.5 justify-end">
+              <span class="text-emerald-400 text-[10px]">●</span>
               <span>{{ profile.username }}</span>
-              <span class="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded text-[10px]">Age {{ profile.age }}</span>
+              <span class="bg-slate-800 text-slate-300 px-1.5 py-0.2 rounded text-[10px] font-mono">Age {{ profile.age }}</span>
             </div>
-            <div class="text-[10px] text-slate-400">
-              S: <span class="text-emerald-400 font-semibold">C{{ profile.strength_chart }} {{ profile.strength_level_display }}</span> |
-              C: <span class="text-blue-400 font-semibold">C{{ profile.cardio_chart }} {{ profile.cardio_level_display }}</span>
+            <div class="text-[10px] font-mono text-slate-400">
+              S: <span class="text-emerald-400 font-bold">C{{ profile.strength_chart }} {{ profile.strength_level_display }}</span>
+              <span class="text-slate-600 mx-1">|</span>
+              C: <span class="text-cyan-400 font-bold">C{{ profile.cardio_chart }} {{ profile.cardio_level_display }}</span>
             </div>
           </div>
+
           <button
             @click="emit('open-adjust')"
-            title="Adjust Level"
-            class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 text-xs"
+            title="Adjust Starting Chart & Level"
+            class="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition-colors cursor-pointer"
           >
             ⚙️
           </button>
+
           <button
             @click="emit('logout')"
-            class="text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700"
+            class="text-xs font-bold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 transition-colors cursor-pointer"
           >
-            Logout
+            Sign Out
           </button>
         </div>
-        <div v-else>
+
+        <!-- Logged Out Sign In Action -->
+        <div v-else class="flex items-center gap-2">
           <button
             @click="emit('open-login')"
-            class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow"
+            class="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
           >
-            Sign In
+            Pilot Sign In
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Mobile Nav Bar (Bottom or secondary row) -->
-    <div class="sm:hidden flex border-t border-slate-800 bg-slate-900/90 px-2 py-1 justify-around text-xs">
+    <!-- Mobile Subnav Bar for logged-in users -->
+    <div v-if="profile" class="md:hidden flex items-center justify-around bg-slate-950 border-t border-slate-800/60 py-2 px-2 text-center">
       <button
         @click="emit('navigate', 'workout')"
-        class="py-1 px-2 font-medium"
-        :class="activeTab === 'workout' ? 'text-blue-400 font-bold' : 'text-slate-400'"
+        class="text-xs font-bold px-2 py-1 rounded"
+        :class="activeTab === 'workout' ? 'text-cyan-400' : 'text-slate-400'"
       >
-        Today
+        Mission
       </button>
       <button
         @click="emit('navigate', 'sheet')"
-        class="py-1 px-2 font-medium"
-        :class="activeTab === 'sheet' ? 'text-blue-400 font-bold' : 'text-slate-400'"
+        class="text-xs font-bold px-2 py-1 rounded"
+        :class="activeTab === 'sheet' ? 'text-cyan-400' : 'text-slate-400'"
       >
-        Print Form
+        Print
       </button>
       <button
         @click="emit('navigate', 'history')"
-        class="py-1 px-2 font-medium"
-        :class="activeTab === 'history' ? 'text-blue-400 font-bold' : 'text-slate-400'"
+        class="text-xs font-bold px-2 py-1 rounded"
+        :class="activeTab === 'history' ? 'text-cyan-400' : 'text-slate-400'"
       >
-        History
+        Flight Log
       </button>
       <button
         @click="emit('navigate', 'badges')"
-        class="py-1 px-2 font-medium"
-        :class="activeTab === 'badges' ? 'text-blue-400 font-bold' : 'text-slate-400'"
+        class="text-xs font-bold px-2 py-1 rounded"
+        :class="activeTab === 'badges' ? 'text-cyan-400' : 'text-slate-400'"
       >
-        Badges
+        Wings
       </button>
     </div>
   </header>

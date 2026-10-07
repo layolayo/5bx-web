@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
+
+const props = defineProps<{
+  initialUsername?: string;
+}>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
@@ -9,15 +13,22 @@ const emit = defineEmits<{
 
 const mode = ref<'login' | 'register'>('login');
 
-const username = ref('');
-const password = ref('');
+const username = ref(props.initialUsername || '');
+const password = ref(props.initialUsername ? 'FiveBX2026!' : '');
 const email = ref('');
 const dob = ref('1990-01-01');
 const errorMsg = ref('');
 
+watch(() => props.initialUsername, (newVal) => {
+  if (newVal) {
+    username.value = newVal;
+    password.value = 'FiveBX2026!';
+  }
+});
+
 function submitLogin() {
   if (!username.value || !password.value) {
-    errorMsg.value = 'Please enter both username/email and password.';
+    errorMsg.value = 'Please provide your pilot username/email and access password.';
     return;
   }
   emit('login', { username_or_email: username.value, password: password.value });
@@ -25,7 +36,7 @@ function submitLogin() {
 
 function submitRegister() {
   if (!username.value || !email.value || !password.value || !dob.value) {
-    errorMsg.value = 'All fields are required for registration.';
+    errorMsg.value = 'All fields are mandatory to establish a new flight profile.';
     return;
   }
   emit('register', {
@@ -35,124 +46,200 @@ function submitRegister() {
     dob: dob.value,
   });
 }
+
+function selectPilot(name: string) {
+  username.value = name;
+  password.value = 'FiveBX2026!';
+  errorMsg.value = '';
+}
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-4">
-        <h2 class="text-xl font-bold text-white">{{ mode === 'login' ? 'Sign In to 5BX' : 'Create 5BX Pilot Profile' }}</h2>
-        <button @click="emit('close')" class="text-slate-400 hover:text-white p-2">✕</button>
+  <div class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-md p-6 sm:p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow ambient accent -->
+      <div class="absolute -top-20 -right-20 w-48 h-48 bg-cyan-500/10 blur-2xl pointer-events-none"></div>
+
+      <!-- Modal Header -->
+      <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-sm font-black">
+            ✈️
+          </div>
+          <div>
+            <h2 class="text-lg font-black text-white uppercase tracking-tight">
+              {{ mode === 'login' ? 'Pilot Authentication' : 'Enlist New Pilot' }}
+            </h2>
+            <p class="text-[11px] text-slate-400">Royal Canadian Air Force 5BX Service</p>
+          </div>
+        </div>
+        <button
+          @click="emit('close')"
+          class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm transition-colors cursor-pointer"
+        >
+          ✕
+        </button>
       </div>
 
-      <!-- Mode Switch Tabs -->
-      <div class="flex bg-slate-900/60 p-1 rounded-xl mb-4 border border-slate-700">
+      <!-- Mode Switch Pills -->
+      <div class="flex bg-slate-950/80 p-1 rounded-xl mb-5 border border-slate-800">
         <button
           @click="mode = 'login'; errorMsg = ''"
-          class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors"
-          :class="mode === 'login' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'"
+          class="flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer"
+          :class="mode === 'login' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Sign In
         </button>
         <button
           @click="mode = 'register'; errorMsg = ''"
-          class="flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors"
-          :class="mode === 'register' ? 'bg-blue-600 text-white shadow' : 'text-slate-400 hover:text-white'"
+          class="flex-1 py-2 text-xs font-bold rounded-lg transition-all cursor-pointer"
+          :class="mode === 'register' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
-          Register New Account
+          Create Profile
         </button>
       </div>
 
-      <div v-if="errorMsg" class="mb-3 bg-red-500/20 border border-red-500/40 text-red-200 text-xs p-2.5 rounded-lg">
-        {{ errorMsg }}
+      <!-- Error Message Banner -->
+      <div v-if="errorMsg" class="mb-4 bg-red-500/15 border border-red-500/30 text-red-300 text-xs p-3 rounded-xl flex items-center gap-2">
+        <span>⚠️</span>
+        <span>{{ errorMsg }}</span>
+      </div>
+
+      <!-- Quick Pilot 1-Tap Selectors (Sign In Mode) -->
+      <div v-if="mode === 'login'" class="mb-5 bg-slate-950/60 p-3 rounded-2xl border border-slate-800">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
+          One-Tap Pilot Selector (Dev / Family Accounts)
+        </span>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button
+            type="button"
+            @click="selectPilot('Matthew')"
+            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
+            :class="username.toLowerCase() === 'matthew' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
+          >
+            Matthew
+          </button>
+          <button
+            type="button"
+            @click="selectPilot('Harvey')"
+            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
+            :class="username.toLowerCase() === 'harvey' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
+          >
+            Harvey
+          </button>
+          <button
+            type="button"
+            @click="selectPilot('Maya')"
+            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
+            :class="username.toLowerCase() === 'maya' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
+          >
+            Maya
+          </button>
+          <button
+            type="button"
+            @click="selectPilot('Test')"
+            class="px-2 py-1.5 rounded-lg text-xs font-bold transition-all text-center cursor-pointer"
+            :class="username.toLowerCase() === 'test' ? 'bg-cyan-500 text-slate-950' : 'bg-slate-800/80 text-slate-300 hover:text-white'"
+          >
+            Test
+          </button>
+        </div>
       </div>
 
       <!-- Login Form -->
-      <form v-if="mode === 'login'" @submit.prevent="submitLogin" class="space-y-3">
+      <form v-if="mode === 'login'" @submit.prevent="submitLogin" class="space-y-4">
         <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Username or Email</label>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+            Callsign or Email
+          </label>
           <input
             v-model="username"
             type="text"
             required
             placeholder="e.g. Matthew or matthew@5bx.local"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-blue-500 focus:outline-none"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
           />
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Password</label>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5">
+            Password
+          </label>
           <input
             v-model="password"
             type="password"
             required
             placeholder="••••••••"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-blue-500 focus:outline-none"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all font-mono"
           />
-        </div>
-
-        <div class="bg-slate-900/40 p-2.5 rounded-lg border border-slate-700/50 text-[11px] text-slate-400">
-          Tip: Migrated accounts (Matthew, Harvey, Maya, Test) have initial password <code class="text-blue-300 font-mono">FiveBX2026!</code>
         </div>
 
         <button
           type="submit"
-          class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg mt-2 transition-colors"
+          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition-all cursor-pointer mt-2"
         >
-          Sign In
+          Authenticate & Access Mission
         </button>
       </form>
 
       <!-- Register Form -->
       <form v-else @submit.prevent="submitRegister" class="space-y-3">
         <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Callsign / Username</label>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            Pilot Callsign (Username)
+          </label>
           <input
             v-model="username"
             type="text"
             required
-            placeholder="Your name or callsign"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm"
+            placeholder="e.g. Maverick"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
           />
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Email Address</label>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            Email Address
+          </label>
           <input
             v-model="email"
             type="email"
             required
             placeholder="pilot@example.com"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
           />
         </div>
 
         <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Date of Birth (For Age Target calculation)</label>
-          <input
-            v-model="dob"
-            type="date"
-            required
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm"
-          />
-        </div>
-
-        <div>
-          <label class="text-xs font-semibold text-slate-300 block mb-1">Password</label>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            Password
+          </label>
           <input
             v-model="password"
             type="password"
             required
             placeholder="Minimum 8 characters"
-            class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-sm"
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1">
+            Date of Birth (Determines Calibration Benchmark)
+          </label>
+          <input
+            v-model="dob"
+            type="date"
+            required
+            class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white text-sm focus:border-cyan-500 focus:outline-none"
           />
         </div>
 
         <button
           type="submit"
-          class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg mt-2 transition-colors"
+          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer mt-2"
         >
-          Complete Registration
+          Enlist & Initialise Ladder
         </button>
       </form>
     </div>

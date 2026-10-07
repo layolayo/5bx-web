@@ -11,108 +11,164 @@ const emit = defineEmits<{
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
 }>();
+
+const muscleFocusMap: Record<number, string> = {
+  1: 'Spine Decompression, Hamstrings & Lumbar Mobility',
+  2: 'Abdominals, Hip Flexors & Core Fortification',
+  3: 'Spinal Extensors, Gluteals & Posterior Chain',
+  4: 'Pectorals, Anterior Deltoids & Triceps Power',
+  5: 'Cardiovascular Conditioning, Calves & Aerobic Capacity'
+};
 </script>
 
 <template>
-  <div class="max-w-4xl mx-auto p-4 sm:p-6 space-y-6">
-    <!-- Hero / Status Banner -->
-    <div class="bg-gradient-to-r from-slate-800 to-slate-850 border border-slate-700 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 relative z-10">
+  <div class="max-w-5xl mx-auto px-4 py-8 space-y-8">
+    <!-- Athlete Cockpit Hero Panel -->
+    <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-850 to-slate-950 border border-slate-700/80 p-6 sm:p-8 shadow-2xl">
+      <!-- Glow ambient accent -->
+      <div class="absolute -top-24 right-0 w-96 h-96 bg-cyan-500/10 blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
         <div>
-          <div class="flex items-center gap-2 mb-1">
-            <span class="bg-blue-600/30 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide uppercase">
-              11-Minute Mission
+          <div class="flex items-center gap-2 mb-2">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold uppercase tracking-wider">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+              <span>11-Minute Daily Cadence</span>
             </span>
-            <span class="text-xs text-slate-400">{{ workout.date }}</span>
+            <span class="text-xs font-mono text-slate-400">{{ workout.date }}</span>
           </div>
-          <h2 class="text-2xl sm:text-3xl font-black text-white">Daily Workout Schedule</h2>
-          <p class="text-sm text-slate-300 mt-1">Five movements executed in sequence without resting equipment.</p>
+
+          <h2 class="text-3xl sm:text-4xl font-black text-white uppercase tracking-tight">
+            Today's Mission Briefing
+          </h2>
+          <p class="text-sm text-slate-300 mt-1 max-w-xl">
+            Five calibrated movements executed strictly in sequence. Complete all required targets to earn your next ladder promotion.
+          </p>
         </div>
 
-        <!-- Quick Level Pills -->
-        <div class="flex sm:flex-col gap-2">
-          <div class="bg-slate-900/80 border border-slate-700 px-3.5 py-1.5 rounded-xl">
-            <span class="text-[10px] text-slate-400 font-semibold block uppercase">Strength (Ex 1–4)</span>
-            <span class="text-base font-bold text-emerald-400">{{ workout.strength_display }}</span>
+        <!-- Split Ladder Cockpit Meters -->
+        <div class="flex flex-wrap sm:flex-nowrap gap-3">
+          <!-- Strength Gauge -->
+          <div class="flex-1 min-w-[150px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Strength Track (Ex 1–4)</span>
+              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            </div>
+            <div class="text-xl font-black text-emerald-400">{{ workout.strength_display }}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">Golden Rule Active</div>
           </div>
-          <div class="bg-slate-900/80 border border-slate-700 px-3.5 py-1.5 rounded-xl">
-            <span class="text-[10px] text-slate-400 font-semibold block uppercase">Cardio (Ex 5)</span>
-            <span class="text-base font-bold text-blue-400">{{ workout.cardio_display }}</span>
+
+          <!-- Cardio Gauge -->
+          <div class="flex-1 min-w-[150px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cardio Track (Ex 5)</span>
+              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+            </div>
+            <div class="text-xl font-black text-cyan-400">{{ workout.cardio_display }}</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-0.5">Stationary / Stride Target</div>
           </div>
         </div>
       </div>
 
-      <!-- Action Buttons -->
-      <div class="mt-6 pt-5 border-t border-slate-700/60 flex flex-wrap gap-3 relative z-10">
+      <!-- Tactical Action Bar -->
+      <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 relative z-10">
+        <!-- Main Launch Workout Button -->
         <button
           @click="emit('start-timer')"
-          class="flex-1 min-w-[200px] bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition-transform active:scale-95 flex items-center justify-center gap-2 text-base"
+          class="flex-1 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 pulse-radar cursor-pointer"
         >
-          <span>⏱️</span>
-          <span>Start 11-Minute Timer</span>
+          <span class="text-xl">⏱️</span>
+          <span>Launch 11-Minute Guided Session</span>
         </button>
 
+        <!-- Secondary Gym Sheet Button -->
         <button
           @click="emit('open-sheet')"
-          class="bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold py-3.5 px-5 rounded-xl border border-slate-600 flex items-center gap-2 text-sm transition-colors"
+          class="px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>📄</span>
-          <span>Single-Sheet Form (Print / PDF)</span>
+          <span>Print Single-Sheet (Gym Form)</span>
         </button>
 
+        <!-- Manual Rep Log Button -->
         <button
-          @click="emit('start-timer')"
-          class="bg-slate-800/80 hover:bg-slate-700 text-slate-300 font-medium py-3.5 px-4 rounded-xl border border-slate-700 text-sm transition-colors"
+          @click="emit('log-manual')"
+          class="px-4 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 text-slate-300 hover:text-white font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
         >
           <span>✍️</span>
-          <span>Log Reps Directly</span>
+          <span>Log Offline Rung</span>
         </button>
       </div>
     </div>
 
-    <!-- 5 Exercise Cards List -->
+    <!-- 5 Calibrated Movements Roster -->
     <div class="space-y-4">
-      <h3 class="text-lg font-bold text-white flex items-center gap-2">
-        <span>Today's Exercises</span>
-        <span class="text-xs font-normal text-slate-400">(Total 11 Minutes)</span>
-      </h3>
-
-      <div
-        v-for="ex in workout.exercises"
-        :key="ex.exercise_number"
-        class="bg-slate-800/90 border border-slate-700 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 transition-all hover:border-slate-600"
-      >
-        <!-- Movement Number Badge -->
-        <div class="w-10 h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-200 font-black text-sm shrink-0">
-          {{ ex.exercise_number }}
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-xl font-black text-white uppercase tracking-tight">Today's Flight Roster</h3>
+          <p class="text-xs text-slate-400">Total duration: 11 minutes without inter-exercise pauses</p>
         </div>
+        <span class="text-xs font-mono text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-3 py-1 rounded-full">
+          Chart {{ workout.strength_chart }} Standards
+        </span>
+      </div>
 
-        <!-- Exercise Image Thumbnail -->
-        <div class="w-36 h-24 bg-white rounded-lg p-1.5 flex items-center justify-center shrink-0 shadow-inner">
-          <img :src="'/images/' + ex.image_path" :alt="ex.name" class="max-h-full max-w-full object-contain" />
-        </div>
+      <div class="grid grid-cols-1 gap-4">
+        <div
+          v-for="ex in workout.exercises"
+          :key="ex.exercise_number"
+          class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-all"
+        >
+          <!-- Left: Number & Illustration -->
+          <div class="flex items-center gap-4 w-full md:w-auto">
+            <!-- Exercise Number Badge -->
+            <div class="w-10 h-10 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center font-black text-sm text-cyan-400 shrink-0 shadow-inner">
+              {{ ex.exercise_number }}
+            </div>
 
-        <!-- Exercise Details -->
-        <div class="flex-1 text-center sm:text-left">
-          <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
-            <h4 class="text-base font-bold text-white">{{ ex.name }}</h4>
-            <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded font-mono">
-              {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' min' : ex.time_limit_seconds + ' sec' }}
-            </span>
+            <!-- Historical RCAF Movement Diagram -->
+            <div class="w-36 h-24 bg-white rounded-xl p-2 flex items-center justify-center shrink-0 shadow-inner border border-slate-300">
+              <img :src="'/images/' + ex.image_path" :alt="ex.name" class="max-h-full max-w-full object-contain" />
+            </div>
+
+            <!-- Movement Identity on Mobile -->
+            <div class="md:hidden flex-1">
+              <h4 class="text-base font-bold text-white">{{ ex.name }}</h4>
+              <div class="text-[10px] font-mono text-cyan-400">
+                {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' min' : ex.time_limit_seconds + ' sec' }}
+              </div>
+            </div>
           </div>
-          <p class="text-xs text-slate-300 leading-relaxed">{{ ex.instructions }}</p>
-        </div>
 
-        <!-- Target Target Counter -->
-        <div class="bg-slate-900/90 border border-slate-700/80 px-4 py-2.5 rounded-xl text-center shrink-0 w-full sm:w-auto">
-          <span class="text-[10px] text-slate-400 font-semibold uppercase block">Prescribed Target</span>
-          <div v-if="!ex.is_cardio" class="text-xl font-black text-emerald-400">
-            {{ ex.target_reps }} <span class="text-xs font-normal text-slate-400">reps</span>
+          <!-- Middle: Name, Muscle Focus & Posture Cues -->
+          <div class="flex-1">
+            <div class="hidden md:flex items-center gap-2.5 mb-1">
+              <h4 class="text-lg font-black text-white">{{ ex.name }}</h4>
+              <span class="text-[11px] font-mono font-bold text-amber-300 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/20">
+                {{ ex.time_limit_seconds >= 60 ? (ex.time_limit_seconds / 60) + ' Minutes' : ex.time_limit_seconds + ' Seconds' }}
+              </span>
+            </div>
+
+            <div class="text-[11px] font-semibold text-cyan-400 uppercase tracking-wide mb-1.5">
+              {{ muscleFocusMap[ex.exercise_number] }}
+            </div>
+
+            <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
+              {{ ex.description }}
+            </p>
           </div>
-          <div v-else class="text-center">
-            <span class="text-lg font-black text-blue-400">{{ ex.target_reps }} <span class="text-xs font-normal text-slate-400">steps</span></span>
-            <div v-if="ex.alt_run_time_seconds > 0" class="text-[10px] text-slate-400 mt-0.5">
-              Run: {{ Math.floor(ex.alt_run_time_seconds / 60) }}:{{ (ex.alt_run_time_seconds % 60).toString().padStart(2, '0') }}
+
+          <!-- Right: Calibrated Target Pill -->
+          <div class="w-full md:w-auto flex md:flex-col items-center md:items-end justify-between md:justify-center p-3 md:p-4 rounded-xl bg-slate-950/90 border border-slate-800 shrink-0">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Required Target</span>
+            <div class="text-2xl font-black text-white tabular-nums tracking-tight">
+              {{ ex.target_reps }}
+              <span class="text-xs font-normal text-slate-400">
+                {{ ex.exercise_number === 5 ? 'runs' : 'reps' }}
+              </span>
+            </div>
+            <div v-if="ex.exercise_number === 5 && workout.target_jumps > 0" class="text-[11px] font-semibold text-cyan-400 mt-0.5">
+              + {{ workout.target_jumps }} scissor jumps
             </div>
           </div>
         </div>

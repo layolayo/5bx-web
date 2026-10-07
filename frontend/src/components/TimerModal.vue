@@ -5,6 +5,7 @@ import { playCountdownBeep, playTransitionChime, playCelebrationChime } from '..
 
 const props = defineProps<{
   workout: TodayWorkout;
+  isGuest?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -70,7 +71,7 @@ function tick() {
       currentExerciseIndex.value++;
       secondsRemaining.value = props.workout.exercises[currentExerciseIndex.value].time_limit_seconds;
     } else {
-      // Finished all 5 exercises!
+      // Completed all 5 exercises
       playCelebrationChime();
       isFinished.value = true;
       clearInterval(timerInterval);
@@ -93,6 +94,7 @@ function nextExercise() {
 }
 
 function finishWorkout() {
+  playCelebrationChime();
   isFinished.value = true;
   clearInterval(timerInterval);
 }
@@ -120,147 +122,177 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <!-- Active Timer Screen -->
-    <div v-if="!isFinished" class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col">
+  <div class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+    <!-- Active Timer Cockpit Screen -->
+    <div v-if="!isFinished" class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col relative">
+      <!-- Glow ambient accent -->
+      <div class="absolute -top-20 left-1/2 -translate-x-1/2 w-64 h-32 bg-cyan-500/15 blur-2xl pointer-events-none"></div>
+
       <!-- Top Bar -->
-      <div class="bg-slate-900/60 p-4 border-b border-slate-700 flex justify-between items-center">
-        <div>
-          <span class="text-xs font-semibold uppercase tracking-wider text-blue-400">Exercise {{ currentExerciseIndex + 1 }} of 5</span>
-          <h2 class="text-xl font-bold text-white">{{ currentExercise.name }}</h2>
+      <div class="bg-slate-950/80 p-4 border-b border-slate-800 flex justify-between items-center relative z-10">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">
+            Movement {{ currentExerciseIndex + 1 }} of 5
+          </span>
+          <span class="text-slate-600">•</span>
+          <span class="text-xs font-bold text-slate-300">{{ currentExercise.name }}</span>
         </div>
-        <button @click="emit('close')" class="text-slate-400 hover:text-white p-2">✕</button>
+        <button
+          @click="emit('close')"
+          class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs transition-colors cursor-pointer"
+        >
+          ✕
+        </button>
       </div>
 
       <!-- Main Body -->
-      <div class="p-6 flex flex-col items-center text-center">
+      <div class="p-6 sm:p-8 flex flex-col items-center text-center relative z-10">
         <!-- Exercise Illustration -->
-        <div class="w-48 h-32 bg-white rounded-xl p-2 flex items-center justify-center shadow-inner mb-4">
+        <div class="w-48 h-32 bg-white rounded-2xl p-2.5 flex items-center justify-center shadow-inner mb-6 border border-slate-300">
           <img :src="'/images/' + currentExercise.image_path" :alt="currentExercise.name" class="max-h-full max-w-full object-contain" />
         </div>
 
         <!-- Big Countdown Timer -->
-        <div class="text-6xl font-black font-mono tracking-tight text-white mb-2">
+        <div class="text-7xl font-black font-mono tracking-tight text-white mb-2 tabular-nums">
           {{ formattedTime }}
         </div>
 
         <!-- Target Info -->
-        <div class="text-base text-slate-300 font-medium mb-4">
-          Target: <span class="text-emerald-400 font-bold">{{ currentExercise.target_reps }} {{ currentExercise.is_cardio ? 'steps' : 'reps' }}</span>
+        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-sm font-bold text-slate-300 mb-5">
+          <span>Cadence Target:</span>
+          <span class="text-emerald-400 font-mono">{{ currentExercise.target_reps }} {{ currentExercise.is_cardio ? 'steps' : 'reps' }}</span>
         </div>
 
         <!-- Technique instructions -->
-        <p class="text-sm text-slate-400 max-w-md line-clamp-3 mb-6 bg-slate-900/40 p-3 rounded-lg border border-slate-700/50">
+        <div class="w-full bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 text-left mb-6 max-h-24 overflow-y-auto">
+          <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Posture Cue</span>
           {{ currentExercise.instructions }}
-        </p>
+        </div>
 
         <!-- Progress bar -->
-        <div class="w-full bg-slate-700 rounded-full h-2.5 mb-6 overflow-hidden">
-          <div class="bg-blue-500 h-2.5 rounded-full transition-all duration-300" :style="{ width: progressPercent + '%' }"></div>
+        <div class="w-full mb-6">
+          <div class="flex justify-between text-[11px] font-mono text-slate-400 mb-1.5">
+            <span>Overall Mission Cadence</span>
+            <span class="text-cyan-400 font-bold">{{ progressPercent }}% ({{ Math.floor(totalSecondsPassed / 60) }}m {{ totalSecondsPassed % 60 }}s / 11m)</span>
+          </div>
+          <div class="w-full bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+            <div
+              class="h-full bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 rounded-full transition-all duration-500"
+              :style="{ width: progressPercent + '%' }"
+            ></div>
+          </div>
         </div>
 
         <!-- Controls -->
-        <div class="flex gap-4 w-full">
+        <div class="flex gap-3 w-full">
           <button
             @click="togglePause"
-            class="flex-1 py-3 px-4 rounded-xl font-bold text-white shadow transition-colors"
-            :class="isPaused ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-amber-600 hover:bg-amber-500'"
+            class="flex-1 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider shadow transition-all cursor-pointer"
+            :class="isPaused ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'"
           >
-            {{ isPaused ? 'Resume' : 'Pause' }}
+            {{ isPaused ? '▶ Resume' : '⏸ Pause' }}
           </button>
           <button
             @click="nextExercise"
-            class="flex-1 py-3 px-4 rounded-xl font-bold bg-blue-600 hover:bg-blue-500 text-white shadow transition-colors"
+            class="flex-1 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
           >
-            {{ currentExerciseIndex < 4 ? 'Next Movement →' : 'Finish Session' }}
+            {{ currentExerciseIndex < 4 ? 'Next Movement →' : 'Finish Workout 🎖️' }}
           </button>
         </div>
       </div>
     </div>
 
     <!-- Finish / Rep Entry Screen -->
-    <div v-else class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col p-6 max-h-[90vh] overflow-y-auto">
-      <div class="text-center mb-4">
-        <span class="text-4xl">🎉</span>
-        <h2 class="text-2xl font-bold text-white mt-1">11 Minutes Complete!</h2>
-        <p class="text-sm text-slate-400">Record your actual performance to calculate your progression.</p>
+    <div v-else class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col p-6 sm:p-8 max-h-[90vh] overflow-y-auto relative">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-3xl mx-auto mb-3">
+          🎖️
+        </div>
+        <h2 class="text-2xl font-black text-white uppercase tracking-tight">11 Minutes Complete!</h2>
+        <p class="text-xs text-slate-300 mt-1">
+          Record your actual completed reps to calculate your official RCAF verdict and ladder progression.
+        </p>
       </div>
 
       <div class="space-y-4">
         <!-- Ex 1-4 Inputs -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 font-semibold block mb-1">Ex 1: Flexibility</label>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ex 1: Bends</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="reps1" type="number" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-              <span class="text-xs text-slate-400">/ {{ workout.exercises[0].target_reps }}</span>
+              <input v-model.number="reps1" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[0].target_reps }}</span>
             </div>
           </div>
 
-          <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 font-semibold block mb-1">Ex 2: Sit-ups</label>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ex 2: Sit-Ups</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="reps2" type="number" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-              <span class="text-xs text-slate-400">/ {{ workout.exercises[1].target_reps }}</span>
+              <input v-model.number="reps2" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[1].target_reps }}</span>
             </div>
           </div>
 
-          <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 font-semibold block mb-1">Ex 3: Back Arch</label>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ex 3: Back Arches</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="reps3" type="number" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-              <span class="text-xs text-slate-400">/ {{ workout.exercises[2].target_reps }}</span>
+              <input v-model.number="reps3" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[2].target_reps }}</span>
             </div>
           </div>
 
-          <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700">
-            <label class="text-xs text-slate-400 font-semibold block mb-1">Ex 4: Push-ups</label>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Ex 4: Push-Ups</label>
             <div class="flex items-center gap-2">
-              <input v-model.number="reps4" type="number" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-              <span class="text-xs text-slate-400">/ {{ workout.exercises[3].target_reps }}</span>
+              <input v-model.number="reps4" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[3].target_reps }}</span>
             </div>
           </div>
         </div>
 
         <!-- Ex 5 Cardio -->
-        <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-700">
-          <label class="text-xs text-slate-400 font-semibold block mb-1">Ex 5: Cardio Track</label>
-          <div class="flex gap-2 mb-2">
+        <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Ex 5: Cardio Track</label>
+          <div class="flex gap-2 mb-3">
             <button
               v-for="mode in ['stationary', 'run', 'walk']"
               :key="mode"
               type="button"
               @click="cardioMode = mode as any"
-              class="flex-1 py-1.5 px-2 text-xs font-semibold rounded capitalize"
-              :class="cardioMode === mode ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'"
+              class="flex-1 py-1.5 px-2 text-xs font-bold rounded-lg uppercase tracking-wider transition-all cursor-pointer"
+              :class="cardioMode === mode ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-900 text-slate-400 hover:text-white'"
             >
               {{ mode }}
             </button>
           </div>
 
           <div v-if="cardioMode === 'stationary'" class="flex items-center gap-2">
-            <input v-model.number="reps5" type="number" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-            <span class="text-xs text-slate-400">steps (Target {{ workout.exercises[4].target_reps }})</span>
+            <input v-model.number="reps5" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+            <span class="text-xs text-slate-400 shrink-0">steps (Target {{ workout.exercises[4].target_reps }})</span>
           </div>
           <div v-else class="flex items-center gap-2">
-            <input v-model.number="cardioDuration" type="number" placeholder="Seconds" class="w-full bg-slate-800 text-white font-bold text-lg p-2 rounded border border-slate-600 text-center" />
-            <span class="text-xs text-slate-400">Total Seconds Taken</span>
+            <input v-model.number="cardioDuration" type="number" placeholder="Seconds" class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+            <span class="text-xs text-slate-400 shrink-0">Total Seconds Taken</span>
           </div>
         </div>
 
-        <!-- Notes -->
+        <!-- Session Notes -->
         <div>
-          <label class="text-xs text-slate-400 font-semibold block mb-1">Session Notes (Optional)</label>
-          <input v-model="notes" type="text" placeholder="Felt strong, slight soreness, etc." class="w-full bg-slate-900 text-white p-2 rounded-lg border border-slate-700 text-sm" />
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Session Debrief Notes (Optional)</label>
+          <input v-model="notes" type="text" placeholder="Felt strong, slight soreness, good cadence..." class="w-full bg-slate-950 text-white p-3 rounded-xl border border-slate-800 text-xs focus:border-cyan-500 focus:outline-none" />
         </div>
 
         <!-- Actions -->
         <div class="flex gap-3 pt-2">
-          <button @click="emit('close')" class="flex-1 py-3 rounded-xl bg-slate-700 text-slate-300 font-semibold hover:bg-slate-600">
-            Cancel
+          <button @click="emit('close')" class="flex-1 py-3.5 rounded-xl bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 text-xs uppercase tracking-wider transition-colors cursor-pointer">
+            Dismiss
           </button>
-          <button @click="submitResults" class="flex-1 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg">
-            Submit & Grade Workout
+          <button
+            @click="submitResults"
+            class="flex-2 py-3.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+          >
+            {{ isGuest ? 'Finish Guest Session' : 'Submit & Calculate Verdict 🎖️' }}
           </button>
         </div>
       </div>
