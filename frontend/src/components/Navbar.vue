@@ -11,6 +11,7 @@ const emit = defineEmits<{
   (e: 'navigate', tab: string): void;
   (e: 'open-login'): void;
   (e: 'open-adjust'): void;
+  (e: 'open-assessment'): void;
   (e: 'logout'): void;
   (e: 'toggle-kiss'): void;
 }>();
@@ -113,8 +114,16 @@ const emit = defineEmits<{
           </div>
 
           <button
+            @click="emit('open-assessment')"
+            title="Flight Assessment & Layoff Re-calibration"
+            class="p-2 text-cyan-400 hover:text-white rounded-lg bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-xs transition-colors cursor-pointer"
+          >
+            🧭
+          </button>
+
+          <button
             @click="emit('open-adjust')"
-            title="Adjust Starting Chart & Level"
+            title="Manual Level Override"
             class="p-2 text-slate-400 hover:text-white rounded-lg bg-slate-900 border border-slate-800 hover:border-slate-700 text-xs transition-colors cursor-pointer"
           >
             ⚙️

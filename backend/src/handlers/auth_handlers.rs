@@ -64,10 +64,13 @@ pub async fn register(
     let c_chart = payload.initial_cardio_chart.unwrap_or(1).clamp(1, 6);
     let c_level = payload.initial_cardio_level.unwrap_or(1).clamp(1, 12);
 
+    let age = calculate_age(dob);
+    let (goal_c, goal_l) = get_age_goal(age);
+
     let user = sqlx::query_as::<_, User>(
         r#"
         INSERT INTO users (username, email, password_hash, dob, strength_chart, strength_level, cardio_chart, cardio_level, goal_chart, goal_level)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 2, 6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *
         "#,
     )
@@ -79,6 +82,8 @@ pub async fn register(
     .bind(s_level)
     .bind(c_chart)
     .bind(c_level)
+    .bind(goal_c)
+    .bind(goal_l)
     .fetch_one(&pool)
     .await
     .map_err(|e| {

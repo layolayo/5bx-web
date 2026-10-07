@@ -5,6 +5,10 @@ import {
   WorkoutSubmissionResult,
   WorkoutSessionHistory,
   BadgesResponse,
+  LayoffStatus,
+  EvaluateDiagnosticPayload,
+  DiagnosticPlacementResult,
+  ApplyAssessmentPayload,
 } from './types';
 
 const BASE_URL = '/api';
@@ -164,5 +168,43 @@ export async function deleteSession(id: number, revertLevel: boolean): Promise<{
     throw new Error(err.error || 'Failed to remove session');
   }
   return await res.json();
+}
+
+export async function fetchLayoffStatus(): Promise<LayoffStatus | null> {
+  try {
+    const res = await fetch(`${BASE_URL}/user/layoff-status`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) {
+    return null;
+  }
+}
+
+export async function evaluateDiagnostic(payload: EvaluateDiagnosticPayload): Promise<DiagnosticPlacementResult> {
+  const res = await fetch(`${BASE_URL}/assessment/evaluate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to evaluate diagnostic placement');
+  }
+  return await res.json();
+}
+
+export async function applyAssessment(payload: ApplyAssessmentPayload): Promise<UserProfile> {
+  const res = await fetch(`${BASE_URL}/assessment/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to apply assessment calibration');
+  }
+  const data = await res.json();
+  localStorage.setItem('5bx_user_profile', JSON.stringify(data));
+  return data;
 }
 

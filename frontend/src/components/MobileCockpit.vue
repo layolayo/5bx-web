@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { TodayWorkout, UserProfile, EarnedBadge } from '../types';
+import { TodayWorkout, UserProfile, EarnedBadge, LayoffStatus } from '../types';
 
 const props = defineProps<{
   workout: TodayWorkout;
   profile: UserProfile | null;
   highestBadge?: EarnedBadge | null;
+  layoffStatus?: LayoffStatus | null;
 }>();
 
 const emit = defineEmits<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
   (e: 'toggle-kiss'): void;
+  (e: 'open-assessment'): void;
 }>();
 
 const expandedMovement = ref<number | null>(null);
@@ -83,6 +85,23 @@ function formatMinutesSeconds(seconds: number) {
       </div>
     </div>
 
+    <!-- Layoff Advisory Card (Mobile) -->
+    <div v-if="layoffStatus && layoffStatus.is_layoff" class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs text-amber-300 shadow-md">
+      <div class="flex items-center gap-2.5">
+        <span class="text-xl">⚠️</span>
+        <div>
+          <div class="font-bold text-amber-200">{{ layoffStatus.days_inactive }} Days Inactive</div>
+          <div class="text-[10px] opacity-80">RCAF safe re-entry recommended</div>
+        </div>
+      </div>
+      <button
+        @click="emit('open-assessment')"
+        class="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition shrink-0 cursor-pointer shadow"
+      >
+        Re-calibrate
+      </button>
+    </div>
+
     <!-- Giant Thumb-Friendly Launch Button (KISS Core) -->
     <button
       @click="emit('start-timer')"
@@ -92,22 +111,30 @@ function formatMinutesSeconds(seconds: number) {
       <span>START 11-MINUTES</span>
     </button>
 
-    <!-- Secondary Quick Actions -->
-    <div class="grid grid-cols-2 gap-2.5">
+    <!-- Secondary Quick Actions (3-Button Layout) -->
+    <div class="grid grid-cols-3 gap-2">
       <button
         @click="emit('log-manual')"
-        class="py-3 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
       >
-        <span>✍️</span>
-        <span>Quick Log Reps</span>
+        <span class="text-base">✍️</span>
+        <span>Quick Log</span>
       </button>
 
       <button
         @click="emit('open-sheet')"
-        class="py-3 px-3 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
       >
-        <span>📄</span>
-        <span>Gym Form Sheet</span>
+        <span class="text-base">📄</span>
+        <span>Gym Sheet</span>
+      </button>
+
+      <button
+        @click="emit('open-assessment')"
+        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-cyan-300 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+      >
+        <span class="text-base">🧭</span>
+        <span>Assess Rung</span>
       </button>
     </div>
 

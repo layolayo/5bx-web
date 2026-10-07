@@ -18,6 +18,7 @@ mod models;
 
 use config::Config;
 use handlers::{
+    assessment_handlers::{apply_assessment, evaluate_diagnostic, get_layoff_status},
     auth_handlers::{login, logout, me, register},
     badge_handlers::get_user_badges,
     profile_handlers::{manual_level_adjustment, update_profile},
@@ -74,7 +75,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/charts", get(get_all_charts))
         .route("/user/profile", put(update_profile))
         .route("/user/levels", post(manual_level_adjustment))
-        .route("/user/badges", get(get_user_badges));
+        .route("/user/badges", get(get_user_badges))
+        .route("/user/layoff-status", get(get_layoff_status))
+        .route("/assessment/evaluate", post(evaluate_diagnostic))
+        .route("/assessment/apply", post(apply_assessment));
 
     let app = Router::new()
         .nest("/api", api_routes)

@@ -199,3 +199,46 @@ pub struct SystemChartsResponse {
     pub charts: Vec<ExerciseChart>,
     pub instructions: Vec<ExerciseInstruction>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LayoffStatusResponse {
+    pub is_layoff: bool,
+    pub days_inactive: i64,
+    pub last_workout_date: Option<String>,
+    pub severity: String,
+    pub current_strength_chart: i32,
+    pub current_strength_level: i32,
+    pub current_strength_display: String,
+    pub current_cardio_chart: i32,
+    pub current_cardio_level: i32,
+    pub current_cardio_display: String,
+    pub recommended_strength_chart: i32,
+    pub recommended_strength_level: i32,
+    pub recommended_strength_display: String,
+    pub recommended_cardio_chart: i32,
+    pub recommended_cardio_level: i32,
+    pub recommended_cardio_display: String,
+    pub rationale: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct EvaluateDiagnosticRequest {
+    pub reps_1: i32,
+    pub reps_2: i32,
+    pub reps_3: i32,
+    pub reps_4: i32,
+    pub cardio_mode: String, // "stationary", "run", "walk"
+    pub reps_5: Option<i32>,
+    pub cardio_duration_secs: Option<i32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplyAssessmentRequest {
+    pub strength_chart: i32,
+    pub strength_level: i32,
+    pub cardio_chart: i32,
+    pub cardio_level: i32,
+    pub assessment_type: String, // "layoff_safe_reentry", "diagnostic_placement", "novice_start", "manual"
+    pub notes: Option<String>,
+}
+

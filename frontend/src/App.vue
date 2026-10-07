@@ -13,6 +13,7 @@ import LoginModal from './components/LoginModal.vue';
 import LevelAdjustModal from './components/LevelAdjustModal.vue';
 import MobileCockpit from './components/MobileCockpit.vue';
 import SessionDetailModal from './components/SessionDetailModal.vue';
+import AssessmentModal from './components/AssessmentModal.vue';
 import {
   UserProfile,
   TodayWorkout,
@@ -21,6 +22,7 @@ import {
   EarnedBadge,
   SubmitWorkoutPayload,
   WorkoutSubmissionResult,
+  LayoffStatus,
 } from './types';
 import {
   fetchMe,
@@ -32,6 +34,7 @@ import {
   registerUser,
   logoutUser,
   adjustLevels,
+  fetchLayoffStatus,
 } from './api';
 
 // Application State
@@ -49,6 +52,8 @@ const showManualLog = ref(false);
 const showLogin = ref(false);
 const showAdjust = ref(false);
 const showBadges = ref(false);
+const showAssessment = ref(false);
+const layoffStatus = ref<LayoffStatus | null>(null);
 const loginPrefill = ref('');
 const isGuestSession = ref(false);
 const celebrationResult = ref<WorkoutSubmissionResult | null>(null);
@@ -132,6 +137,20 @@ async function loadData() {
       const bRes = await fetchBadges();
       badges.value = bRes;
       highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
+
+      try {
+        const lStatus = await fetchLayoffStatus();
+        layoffStatus.value = lStatus;
+        if (lStatus && lStatus.is_layoff) {
+          const dismissedKey = `5bx_layoff_prompted_${profile.value.id}_${lStatus.days_inactive}`;
+          if (!sessionStorage.getItem(dismissedKey)) {
+            showAssessment.value = true;
+            sessionStorage.setItem(dismissedKey, '1');
+          }
+        }
+      } catch (err) {
+        console.error('Error checking layoff status:', err);
+      }
     }
   } catch (e) {
     console.error('Error loading 5BX data:', e);
@@ -149,6 +168,16 @@ async function handleLogin(payload: { username_or_email: string; password: strin
     badges.value = bRes;
     highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     activeTab.value = 'workout';
+
+    try {
+      const lStatus = await fetchLayoffStatus();
+      layoffStatus.value = lStatus;
+      if (lStatus && lStatus.is_layoff) {
+        showAssessment.value = true;
+      }
+    } catch (err) {
+      console.error('Error checking layoff status on login:', err);
+    }
   } catch (e: any) {
     alert(e.message || 'Authentication failed');
   }
@@ -165,8 +194,25 @@ async function handleRegister(payload: any) {
     badges.value = bRes;
     highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     activeTab.value = 'workout';
+
+    // Show Assessment induction wizard so new pilot can establish their baseline
+    showAssessment.value = true;
   } catch (e: any) {
     alert(e.message || 'Registration failed');
+  }
+}
+
+async function handleAssessmentApplied() {
+  try {
+    profile.value = await fetchMe();
+    workout.value = await fetchTodayWorkout();
+    history.value = await fetchHistory();
+    const bRes = await fetchBadges();
+    badges.value = bRes;
+    highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
+    layoffStatus.value = await fetchLayoffStatus();
+  } catch (e) {
+    console.error('Error refreshing data after assessment:', e);
   }
 }
 
@@ -176,6 +222,7 @@ async function handleLogout() {
   workout.value = null;
   history.value = [];
   highestBadge.value = null;
+  layoffStatus.value = null;
   activeTab.value = 'workout';
 }
 
@@ -304,6 +351,7 @@ onMounted(() => {
       @navigate="navigate"
       @open-login="handleOpenLoginWithPilot()"
       @open-adjust="showAdjust = true"
+      @open-assessment="showAssessment = true"
       @logout="handleLogout"
       @toggle-kiss="toggleKissMode"
     />
@@ -325,9 +373,11 @@ onMounted(() => {
         :workout="workout"
         :profile="profile"
         :highest-badge="highestBadge"
+        :layoff-status="layoffStatus"
         @start-timer="showTimer = true; isGuestSession = false"
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
+        @open-assessment="showAssessment = true"
         @toggle-kiss="toggleKissMode"
       />
 
@@ -337,10 +387,12 @@ onMounted(() => {
         :workout="workout"
         :profile="profile"
         :highest-badge="highestBadge"
+        :layoff-status="layoffStatus"
         @start-timer="showTimer = true; isGuestSession = false"
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-badges="showBadges = true"
+        @open-assessment="showAssessment = true"
       />
 
       <!-- System Charts Browser (Charts 1-6, all 72 rungs) -->
@@ -459,6 +511,21 @@ onMounted(() => {
       @close="inspectSession = null"
       @updated="handleSessionUpdated"
       @deleted="handleSessionDeleted"
+    />
+
+    <!-- Flight Assessment & Layoff Re-entry Modal -->
+    <AssessmentModal
+      v-if="showAssessment && profile"
+      :show="showAssessment"
+      :layoff-status="layoffStatus"
+      :current-strength-chart="profile.strength_chart"
+      :current-strength-level="profile.strength_level"
+      :current-strength-display="profile.strength_level_display"
+      :current-cardio-chart="profile.cardio_chart"
+      :current-cardio-level="profile.cardio_level"
+      :current-cardio-display="profile.cardio_level_display"
+      @close="showAssessment = false"
+      @applied="handleAssessmentApplied"
     />
   </div>
 </template>

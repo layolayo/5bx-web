@@ -148,3 +148,53 @@ export interface SystemChartsData {
   charts: ExerciseChartRow[];
   instructions: ExerciseInstructionRow[];
 }
+
+export interface LayoffStatus {
+  is_layoff: boolean;
+  days_inactive: number;
+  last_workout_date?: string | null;
+  severity: string;
+  current_strength_chart: number;
+  current_strength_level: number;
+  current_strength_display: string;
+  current_cardio_chart: number;
+  current_cardio_level: number;
+  current_cardio_display: string;
+  recommended_strength_chart: number;
+  recommended_strength_level: number;
+  recommended_strength_display: string;
+  recommended_cardio_chart: number;
+  recommended_cardio_level: number;
+  recommended_cardio_display: string;
+  rationale: string;
+}
+
+export interface EvaluateDiagnosticPayload {
+  reps_1: number;
+  reps_2: number;
+  reps_3: number;
+  reps_4: number;
+  cardio_mode: string;
+  reps_5?: number;
+  cardio_duration_secs?: number;
+}
+
+export interface DiagnosticPlacementResult {
+  strength_chart: number;
+  strength_level: number;
+  strength_display: string;
+  cardio_chart: number;
+  cardio_level: number;
+  cardio_display: string;
+  summary: string;
+}
+
+export interface ApplyAssessmentPayload {
+  strength_chart: number;
+  strength_level: number;
+  cardio_chart: number;
+  cardio_level: number;
+  assessment_type: string;
+  notes?: string;
+}
+

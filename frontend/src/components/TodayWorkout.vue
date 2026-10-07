@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { TodayWorkout, UserProfile, EarnedBadge } from '../types';
+import { TodayWorkout, UserProfile, EarnedBadge, LayoffStatus } from '../types';
 
 const props = defineProps<{
   workout: TodayWorkout;
   profile: UserProfile | null;
   highestBadge?: EarnedBadge | null;
+  layoffStatus?: LayoffStatus | null;
 }>();
 
 const emit = defineEmits<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
   (e: 'open-badges'): void;
+  (e: 'open-assessment'): void;
 }>();
 
 const cardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
@@ -131,6 +133,27 @@ const muscleFocusMap: Record<number, string> = {
         </button>
       </div>
 
+      <!-- Layoff Advisory Banner (Desktop) -->
+      <div v-if="layoffStatus && layoffStatus.is_layoff" class="mt-6 bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-300 relative z-10 shadow-lg">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">⚠️</span>
+          <div>
+            <div class="font-bold text-sm text-amber-200">
+              Absence Detected: {{ layoffStatus.days_inactive }} Days Inactive
+            </div>
+            <div class="text-xs text-amber-300/80 mt-0.5">
+              {{ layoffStatus.rationale }}
+            </div>
+          </div>
+        </div>
+        <button
+          @click="emit('open-assessment')"
+          class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs transition cursor-pointer shrink-0 shadow"
+        >
+          Calibrate Re-entry Rung →
+        </button>
+      </div>
+
       <!-- Tactical Action Bar (Standardised Button Sizes) -->
       <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
         <!-- Main Launch Workout Button -->
@@ -148,7 +171,7 @@ const muscleFocusMap: Record<number, string> = {
           class="btn-control-secondary bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white"
         >
           <span>📄</span>
-          <span>Print Single-Sheet (Gym Form)</span>
+          <span>Gym Form Sheet</span>
         </button>
 
         <!-- Manual Rep Log Button (Opens Offline Scorecard Direct) -->
@@ -158,6 +181,15 @@ const muscleFocusMap: Record<number, string> = {
         >
           <span>✍️</span>
           <span>Log Offline Rung</span>
+        </button>
+
+        <!-- Assess Level / Layoff Re-entry Button -->
+        <button
+          @click="emit('open-assessment')"
+          class="btn-control-tertiary bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-300 hover:text-white"
+        >
+          <span>🧭</span>
+          <span>Assess Level</span>
         </button>
       </div>
     </div>
