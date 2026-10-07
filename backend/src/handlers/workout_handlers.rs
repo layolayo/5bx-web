@@ -407,3 +407,36 @@ pub async fn get_workout_history(
 
     Ok(Json(rows))
 }
+
+pub async fn get_all_charts(
+    State((pool, _)): State<(PgPool, Config)>,
+) -> Result<Json<crate::models::SystemChartsResponse>, (StatusCode, Json<serde_json::Value>)> {
+    let charts = sqlx::query_as::<_, crate::models::ExerciseChart>(
+        "SELECT * FROM exercise_charts ORDER BY chart ASC, level ASC",
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Failed to retrieve charts: {}", e)})),
+        )
+    })?;
+
+    let instructions = sqlx::query_as::<_, crate::models::ExerciseInstruction>(
+        "SELECT * FROM exercise_instructions ORDER BY chart ASC, exercise ASC",
+    )
+    .fetch_all(&pool)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Failed to retrieve instructions: {}", e)})),
+        )
+    })?;
+
+    Ok(Json(crate::models::SystemChartsResponse {
+        charts,
+        instructions,
+    }))
+}

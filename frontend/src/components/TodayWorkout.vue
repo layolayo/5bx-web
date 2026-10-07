@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { TodayWorkout, UserProfile } from '../types';
+import { TodayWorkout, UserProfile, EarnedBadge } from '../types';
 
 defineProps<{
   workout: TodayWorkout;
   profile: UserProfile | null;
+  highestBadge?: EarnedBadge | null;
 }>();
 
 const emit = defineEmits<{
   (e: 'start-timer'): void;
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
+  (e: 'open-badges'): void;
 }>();
 
 const muscleFocusMap: Record<number, string> = {
@@ -70,30 +72,55 @@ const muscleFocusMap: Record<number, string> = {
         </div>
       </div>
 
-      <!-- Tactical Action Bar -->
-      <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 relative z-10">
+      <!-- Highest Flying Honour Ribbon -->
+      <div v-if="highestBadge" class="mt-6 bg-slate-950/90 border border-amber-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10 shadow-lg">
+        <div class="flex items-center gap-3.5">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 p-1.5 flex items-center justify-center shrink-0">
+            <img :src="'/images/badges/' + highestBadge.image_name" :alt="highestBadge.title" class="max-h-full max-w-full object-contain" />
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-wider text-amber-400 bg-amber-950/60 px-2 py-0.5 rounded border border-amber-500/20">
+                Highest Flying Honour
+              </span>
+              <span class="text-[10px] font-mono text-emerald-400 font-bold">{{ highestBadge.status_text }}</span>
+            </div>
+            <h4 class="text-base font-black text-white leading-tight mt-0.5">{{ highestBadge.title }}</h4>
+            <div class="text-[11px] text-slate-400 font-mono">{{ highestBadge.details }}</div>
+          </div>
+        </div>
+        <button
+          @click="emit('open-badges')"
+          class="text-xs font-bold text-amber-400 hover:text-amber-300 underline self-end sm:self-center cursor-pointer"
+        >
+          View All Awards →
+        </button>
+      </div>
+
+      <!-- Tactical Action Bar (Standardised Button Sizes) -->
+      <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
         <!-- Main Launch Workout Button -->
         <button
           @click="emit('start-timer')"
-          class="flex-1 px-8 py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-emerald-500/20 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-3 pulse-radar cursor-pointer"
+          class="btn-control-primary flex-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-xl shadow-emerald-500/20 pulse-radar"
         >
-          <span class="text-xl">⏱️</span>
+          <span class="text-lg">⏱️</span>
           <span>Launch 11-Minute Guided Session</span>
         </button>
 
         <!-- Secondary Gym Sheet Button -->
         <button
           @click="emit('open-sheet')"
-          class="px-5 py-4 rounded-2xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+          class="btn-control-secondary bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white"
         >
           <span>📄</span>
           <span>Print Single-Sheet (Gym Form)</span>
         </button>
 
-        <!-- Manual Rep Log Button -->
+        <!-- Manual Rep Log Button (Opens Offline Scorecard Direct) -->
         <button
           @click="emit('log-manual')"
-          class="px-4 py-4 rounded-2xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-800 text-slate-300 hover:text-white font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          class="btn-control-tertiary bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white"
         >
           <span>✍️</span>
           <span>Log Offline Rung</span>

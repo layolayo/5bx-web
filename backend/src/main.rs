@@ -22,7 +22,7 @@ use handlers::{
     badge_handlers::get_user_badges,
     profile_handlers::{manual_level_adjustment, update_profile},
     static_handlers::static_handler,
-    workout_handlers::{get_today_workout, get_workout_history, submit_workout},
+    workout_handlers::{get_all_charts, get_today_workout, get_workout_history, submit_workout},
 };
 
 #[tokio::main]
@@ -66,6 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/workout/today", get(get_today_workout))
         .route("/workout/submit", post(submit_workout))
         .route("/workout/history", get(get_workout_history))
+        .route("/charts", get(get_all_charts))
         .route("/user/profile", put(update_profile))
         .route("/user/levels", post(manual_level_adjustment))
         .route("/user/badges", get(get_user_badges));

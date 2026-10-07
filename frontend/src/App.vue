@@ -3,10 +3,12 @@ import { ref, onMounted } from 'vue';
 import Navbar from './components/Navbar.vue';
 import LandingHero from './components/LandingHero.vue';
 import TodayWorkoutView from './components/TodayWorkout.vue';
+import ChartBrowser from './components/ChartBrowser.vue';
 import PrintSheet from './components/PrintSheet.vue';
 import HistoryList from './components/HistoryList.vue';
 import BadgesModal from './components/BadgesModal.vue';
 import TimerModal from './components/TimerModal.vue';
+import ManualLogModal from './components/ManualLogModal.vue';
 import LoginModal from './components/LoginModal.vue';
 import LevelAdjustModal from './components/LevelAdjustModal.vue';
 import {
@@ -14,6 +16,7 @@ import {
   TodayWorkout,
   WorkoutSessionHistory,
   BadgesResponse,
+  EarnedBadge,
   SubmitWorkoutPayload,
   WorkoutSubmissionResult,
 } from './types';
@@ -34,11 +37,13 @@ const profile = ref<UserProfile | null>(null);
 const workout = ref<TodayWorkout | null>(null);
 const history = ref<WorkoutSessionHistory[]>([]);
 const badges = ref<BadgesResponse>({ earned_badges: [], targets: [] });
-const activeTab = ref('workout'); // 'workout' | 'sheet' | 'history' | 'badges'
+const highestBadge = ref<EarnedBadge | null>(null);
+const activeTab = ref('workout'); // 'workout' | 'charts' | 'sheet' | 'history' | 'badges'
 const isOffline = ref(!navigator.onLine);
 
 // Modals and Flow States
 const showTimer = ref(false);
+const showManualLog = ref(false);
 const showLogin = ref(false);
 const showAdjust = ref(false);
 const showBadges = ref(false);
@@ -48,6 +53,7 @@ const celebrationResult = ref<WorkoutSubmissionResult | null>(null);
 
 // Fallback guest workout for unauthenticated test-drives
 const guestWorkoutTemplate: TodayWorkout = {
+  user_id: 0,
   username: 'Guest Pilot',
   date: new Date().toISOString().split('T')[0],
   strength_chart: 1,
@@ -56,7 +62,6 @@ const guestWorkoutTemplate: TodayWorkout = {
   cardio_chart: 1,
   cardio_level: 1,
   cardio_display: 'Chart 1 • Level 1 (D-)',
-  target_jumps: 0,
   exercises: [
     {
       exercise_number: 1,
@@ -66,6 +71,8 @@ const guestWorkoutTemplate: TodayWorkout = {
       image_path: 'c1_ex1.png',
       instructions: 'Stand erect, feet 12 inches apart. Bend forward to touch the floor, then stretch up backward.',
       is_cardio: false,
+      alt_run_time_seconds: 0,
+      alt_walk_time_seconds: 0,
     },
     {
       exercise_number: 2,
@@ -75,6 +82,8 @@ const guestWorkoutTemplate: TodayWorkout = {
       image_path: 'c1_ex2.png',
       instructions: 'Lie on back, feet 6 inches apart. Sit up smoothly, reach past toes, then roll down.',
       is_cardio: false,
+      alt_run_time_seconds: 0,
+      alt_walk_time_seconds: 0,
     },
     {
       exercise_number: 3,
@@ -84,6 +93,8 @@ const guestWorkoutTemplate: TodayWorkout = {
       image_path: 'c1_ex3.png',
       instructions: 'Lie prone, hands under thighs. Raise head, chest, and thighs high off the ground.',
       is_cardio: false,
+      alt_run_time_seconds: 0,
+      alt_walk_time_seconds: 0,
     },
     {
       exercise_number: 4,
@@ -93,6 +104,8 @@ const guestWorkoutTemplate: TodayWorkout = {
       image_path: 'c1_ex4.png',
       instructions: 'Push-ups from the knees, keeping trunk rigid and touching chin to floor.',
       is_cardio: false,
+      alt_run_time_seconds: 0,
+      alt_walk_time_seconds: 0,
     },
     {
       exercise_number: 5,
@@ -102,6 +115,8 @@ const guestWorkoutTemplate: TodayWorkout = {
       image_path: 'c1_ex5.png',
       instructions: 'Stationary run lifting feet 4 inches off the floor. 1 step every forward foot contact.',
       is_cardio: true,
+      alt_run_time_seconds: 480,
+      alt_walk_time_seconds: 1260,
     },
   ],
 };
@@ -112,7 +127,9 @@ async function loadData() {
     if (profile.value) {
       workout.value = await fetchTodayWorkout();
       history.value = await fetchHistory();
-      badges.value = await fetchBadges();
+      const bRes = await fetchBadges();
+      badges.value = bRes;
+      highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     }
   } catch (e) {
     console.error('Error loading 5BX data:', e);
@@ -126,7 +143,9 @@ async function handleLogin(payload: { username_or_email: string; password: strin
     isGuestSession.value = false;
     workout.value = await fetchTodayWorkout();
     history.value = await fetchHistory();
-    badges.value = await fetchBadges();
+    const bRes = await fetchBadges();
+    badges.value = bRes;
+    highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     activeTab.value = 'workout';
   } catch (e: any) {
     alert(e.message || 'Authentication failed');
@@ -140,7 +159,9 @@ async function handleRegister(payload: any) {
     isGuestSession.value = false;
     workout.value = await fetchTodayWorkout();
     history.value = await fetchHistory();
-    badges.value = await fetchBadges();
+    const bRes = await fetchBadges();
+    badges.value = bRes;
+    highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     activeTab.value = 'workout';
   } catch (e: any) {
     alert(e.message || 'Registration failed');
@@ -152,6 +173,7 @@ async function handleLogout() {
   profile.value = null;
   workout.value = null;
   history.value = [];
+  highestBadge.value = null;
   activeTab.value = 'workout';
 }
 
@@ -169,6 +191,7 @@ function handleOpenLoginWithPilot(pilot?: { username: string }) {
 async function handleSubmitWorkout(payload: SubmitWorkoutPayload) {
   if (isGuestSession.value || !profile.value) {
     showTimer.value = false;
+    showManualLog.value = false;
     alert('Congratulations on completing your 11-minute test session! To record your progression and unlock badges, please sign in or register.');
     showLogin.value = true;
     return;
@@ -178,12 +201,15 @@ async function handleSubmitWorkout(payload: SubmitWorkoutPayload) {
     const res = await submitWorkout(payload);
     celebrationResult.value = res;
     showTimer.value = false;
+    showManualLog.value = false;
 
     // Refresh telemetry
     profile.value = await fetchMe();
     workout.value = await fetchTodayWorkout();
     history.value = await fetchHistory();
-    badges.value = await fetchBadges();
+    const bRes = await fetchBadges();
+    badges.value = bRes;
+    highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
   } catch (e: any) {
     alert(e.message || 'Failed to record workout session');
   }
@@ -194,6 +220,9 @@ async function handleAdjustSave(payload: { s_chart: number; s_level: number; c_c
     profile.value = await adjustLevels(payload.s_chart, payload.s_level, payload.c_chart, payload.c_level, payload.reason);
     workout.value = await fetchTodayWorkout();
     history.value = await fetchHistory();
+    const bRes = await fetchBadges();
+    badges.value = bRes;
+    highestBadge.value = bRes.highest_badge || (bRes.earned_badges.length > 0 ? bRes.earned_badges[0] : null);
     showAdjust.value = false;
   } catch (e: any) {
     alert(e.message || 'Failed to adjust levels');
@@ -241,12 +270,13 @@ onMounted(() => {
 
     <!-- Main Dynamic Content -->
     <main class="flex-1 pb-16">
-      <!-- Public Motivational Landing Page (when logged out and not viewing sheet) -->
+      <!-- Public Motivational Landing Page (when logged out and on workout tab) -->
       <LandingHero
         v-if="!profile && activeTab === 'workout'"
         @open-login="handleOpenLoginWithPilot"
         @start-guest-workout="startGuestWorkout"
         @open-sheet="activeTab = 'sheet'"
+        @open-charts="activeTab = 'charts'"
       />
 
       <!-- Authenticated Cockpit: Today's Mission -->
@@ -254,9 +284,18 @@ onMounted(() => {
         v-if="profile && workout && activeTab === 'workout'"
         :workout="workout"
         :profile="profile"
+        :highest-badge="highestBadge"
         @start-timer="showTimer = true; isGuestSession = false"
         @open-sheet="activeTab = 'sheet'"
-        @log-manual="showTimer = true; isGuestSession = false"
+        @log-manual="showManualLog = true; isGuestSession = false"
+        @open-badges="showBadges = true"
+      />
+
+      <!-- System Charts Browser (Charts 1-6, all 72 rungs) -->
+      <ChartBrowser
+        v-if="activeTab === 'charts'"
+        :profile="profile"
+        @close="activeTab = 'workout'"
       />
 
       <!-- Single-Sheet Printable Form (available to all) -->
@@ -267,7 +306,7 @@ onMounted(() => {
         @close="activeTab = 'workout'"
       />
 
-      <!-- Flight Log: History List -->
+      <!-- Flight Log: History List & Telemetry Graphs -->
       <HistoryList
         v-if="profile && activeTab === 'history'"
         :history="history"
@@ -275,6 +314,7 @@ onMounted(() => {
     </main>
 
     <!-- Modals -->
+    <!-- Active 11-Minute Timer Guided Session -->
     <TimerModal
       v-if="showTimer && (workout || guestWorkoutTemplate)"
       :workout="workout || guestWorkoutTemplate"
@@ -283,6 +323,15 @@ onMounted(() => {
       @submit="handleSubmitWorkout"
     />
 
+    <!-- Dedicated Offline Scorecard Manual Log Modal -->
+    <ManualLogModal
+      v-if="showManualLog && (workout || guestWorkoutTemplate)"
+      :workout="workout || guestWorkoutTemplate"
+      @close="showManualLog = false"
+      @submit="handleSubmitWorkout"
+    />
+
+    <!-- Pilot Sign In & Profile Creation -->
     <LoginModal
       v-if="showLogin"
       :initial-username="loginPrefill"
@@ -291,6 +340,7 @@ onMounted(() => {
       @register="handleRegister"
     />
 
+    <!-- Manual Starting Level Adjustment -->
     <LevelAdjustModal
       v-if="showAdjust && profile"
       :profile="profile"
@@ -298,6 +348,7 @@ onMounted(() => {
       @save="handleAdjustSave"
     />
 
+    <!-- Milestone Wings Trophy Room -->
     <BadgesModal
       v-if="showBadges"
       :badges="badges"
@@ -340,7 +391,7 @@ onMounted(() => {
 
         <button
           @click="celebrationResult = null"
-          class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl shadow-lg shadow-emerald-500/20 text-sm uppercase tracking-wider transition-all cursor-pointer"
+          class="w-full btn-control-primary bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20"
         >
           Acknowledge & Continue
         </button>

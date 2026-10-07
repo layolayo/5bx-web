@@ -182,6 +182,7 @@ pub struct WorkoutSessionRow {
     pub created_at: DateTime<Utc>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
 pub struct UserBadgeRow {
     pub id: i32,
@@ -191,4 +192,10 @@ pub struct UserBadgeRow {
     pub badge_type: String,
     pub image_name: Option<String>,
     pub earned_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SystemChartsResponse {
+    pub charts: Vec<ExerciseChart>,
+    pub instructions: Vec<ExerciseInstruction>,
 }

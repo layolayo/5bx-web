@@ -95,14 +95,15 @@ export interface WorkoutSessionHistory {
   created_at: string;
 }
 
-export interface UserBadge {
-  id: number;
-  user_id: number;
-  badge_key: string;
-  badge_title: string;
+export interface EarnedBadge {
+  key: string;
+  title: string;
+  details: string;
+  image_name: string;
   badge_type: string;
-  image_name?: string;
-  earned_at: string;
+  status_text: string;
+  score: number;
+  is_highest: boolean;
 }
 
 export interface MilestoneTarget {
@@ -116,6 +117,34 @@ export interface MilestoneTarget {
 }
 
 export interface BadgesResponse {
-  earned_badges: UserBadge[];
+  earned_badges: EarnedBadge[];
+  highest_badge?: EarnedBadge | null;
   targets: MilestoneTarget[];
+}
+
+export interface ExerciseChartRow {
+  id: number;
+  chart: number;
+  level: number;
+  ex1: number;
+  ex2: number;
+  ex3: number;
+  ex4: number;
+  ex5: number;
+  ex5_run: number;
+  ex5_walk: number;
+}
+
+export interface ExerciseInstructionRow {
+  id: number;
+  chart: number;
+  exercise: number;
+  name: string;
+  instructions: string;
+  image_path: string;
+}
+
+export interface SystemChartsData {
+  charts: ExerciseChartRow[];
+  instructions: ExerciseInstructionRow[];
 }

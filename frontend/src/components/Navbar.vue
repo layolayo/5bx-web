@@ -37,28 +37,35 @@ const emit = defineEmits<{
       <nav v-if="profile" class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
         <button
           @click="emit('navigate', 'workout')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'workout' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Daily Mission
         </button>
         <button
+          @click="emit('navigate', 'charts')"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'charts' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
+        >
+          System Charts
+        </button>
+        <button
           @click="emit('navigate', 'sheet')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'sheet' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Print Gym Sheet
         </button>
         <button
           @click="emit('navigate', 'history')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'history' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Flight Log
         </button>
         <button
           @click="emit('navigate', 'badges')"
-          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'badges' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Milestones
@@ -67,6 +74,9 @@ const emit = defineEmits<{
 
       <!-- Public Nav (When logged out) -->
       <nav v-else class="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-300">
+        <button @click="emit('navigate', 'charts')" class="hover:text-cyan-400 transition-colors cursor-pointer">
+          System Charts (1–6)
+        </button>
         <button @click="emit('navigate', 'sheet')" class="hover:text-cyan-400 transition-colors cursor-pointer">
           Single-Sheet Gym Form
         </button>
@@ -125,6 +135,13 @@ const emit = defineEmits<{
         :class="activeTab === 'workout' ? 'text-cyan-400' : 'text-slate-400'"
       >
         Mission
+      </button>
+      <button
+        @click="emit('navigate', 'charts')"
+        class="text-xs font-bold px-2 py-1 rounded"
+        :class="activeTab === 'charts' ? 'text-cyan-400' : 'text-slate-400'"
+      >
+        Charts
       </button>
       <button
         @click="emit('navigate', 'sheet')"

@@ -11,78 +11,112 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-    <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-2xl">
-      <div class="flex justify-between items-center pb-3 border-b border-slate-700 mb-6">
+  <div class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 shadow-2xl relative">
+      <!-- Glow ambient accent -->
+      <div class="absolute -top-20 -right-20 w-48 h-48 bg-amber-500/10 blur-2xl pointer-events-none"></div>
+
+      <!-- Header -->
+      <div class="flex justify-between items-center pb-4 border-b border-slate-800 mb-6">
         <div>
-          <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+          <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-950/60 border border-amber-500/30 text-amber-300 text-[10px] font-bold uppercase tracking-wider mb-1">
             <span>🏆</span>
-            <span>Milestones & Achievements</span>
-          </h2>
-          <p class="text-xs text-slate-400">RCAF Age Standards, Flying Crew Elite, and Superman Targets.</p>
+            <span>RCAF Trophy Room</span>
+          </div>
+          <h2 class="text-2xl font-black text-white uppercase tracking-tight">Milestones & Achievements</h2>
+          <p class="text-xs text-slate-400">Official Royal Canadian Air Force age standards, Flying Crew Elite wings, and Superman honours.</p>
         </div>
-        <button @click="emit('close')" class="text-slate-400 hover:text-white p-2">✕</button>
+        <button
+          @click="emit('close')"
+          class="w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+        >
+          ✕
+        </button>
       </div>
 
       <!-- Earned Badges Showcase -->
       <div class="mb-8">
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Earned Badges</h3>
-        <div v-if="badges.earned_badges.length === 0" class="bg-slate-900/60 p-6 rounded-xl text-center text-slate-400 text-sm">
-          No badges earned yet. Reach your age target in both Strength and Cardio to claim your first badge!
+        <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider mb-3 flex items-center justify-between">
+          <span>Earned Flight Honours ({{ badges.earned_badges.length }})</span>
+          <span class="text-[10px] text-amber-400 font-mono">Evaluated Against Current Rung</span>
+        </h3>
+
+        <div v-if="badges.earned_badges.length === 0" class="bg-slate-950/80 p-8 rounded-2xl border border-slate-800 text-center text-slate-400 text-xs">
+          No honours earned yet. Advance your Strength and Cardio ladder rungs to unlock official RCAF wings!
         </div>
+
         <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div
             v-for="b in badges.earned_badges"
-            :key="b.id"
-            class="bg-gradient-to-r from-amber-500/10 to-slate-900 border border-amber-500/30 p-3 rounded-xl flex items-center gap-3"
+            :key="b.key"
+            class="p-4 rounded-2xl border flex items-center gap-4 transition-all"
+            :class="b.is_highest ? 'bg-gradient-to-r from-amber-500/15 via-amber-900/10 to-slate-950 border-amber-500/50 shadow-lg shadow-amber-500/10' : 'bg-slate-950/80 border-slate-800'"
           >
-            <div class="w-12 h-12 bg-white rounded-lg p-1 shrink-0 flex items-center justify-center">
-              <img v-if="b.image_name" :src="'/images/badges/' + b.image_name" :alt="b.badge_title" class="max-h-full max-w-full object-contain" />
-              <span v-else class="text-2xl">🏅</span>
+            <!-- Badge Icon Container -->
+            <div class="w-14 h-14 bg-white rounded-xl p-1.5 shrink-0 flex items-center justify-center shadow-inner border border-slate-300">
+              <img :src="'/images/badges/' + b.image_name" :alt="b.title" class="max-h-full max-w-full object-contain" />
             </div>
-            <div>
-              <h4 class="text-sm font-bold text-amber-300">{{ b.badge_title }}</h4>
-              <p class="text-[10px] text-slate-400">Unlocked {{ new Date(b.earned_at).toLocaleDateString('en-GB') }}</p>
+
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span
+                  class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                  :class="b.is_highest ? 'bg-amber-400 text-slate-950' : 'bg-slate-800 text-slate-400'"
+                >
+                  {{ b.is_highest ? 'Highest Honour' : b.badge_type }}
+                </span>
+                <span class="text-[10px] font-mono text-emerald-400 font-bold truncate">{{ b.status_text }}</span>
+              </div>
+              <h4 class="text-sm font-black text-white truncate">{{ b.title }}</h4>
+              <p class="text-[11px] font-mono text-slate-400 mt-0.5">{{ b.details }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Roadmap / Targets -->
+      <!-- Target Roadmap -->
       <div>
-        <h3 class="text-sm font-bold text-slate-300 uppercase tracking-wider mb-3">Milestone Targets</h3>
+        <h3 class="text-xs font-black text-slate-300 uppercase tracking-wider mb-3">
+          Calibration Targets Roadmap
+        </h3>
+
         <div class="space-y-2.5">
           <div
             v-for="t in badges.targets"
             :key="t.title"
-            class="p-3.5 rounded-xl border flex items-center justify-between transition-colors"
-            :class="t.is_achieved ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-slate-900/50 border-slate-700'"
+            class="p-4 rounded-2xl border flex items-center justify-between transition-colors"
+            :class="t.is_achieved ? 'bg-emerald-950/20 border-emerald-500/40' : 'bg-slate-950/80 border-slate-800'"
           >
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 bg-slate-800 rounded-lg p-1 flex items-center justify-center shrink-0 border border-slate-700">
+            <div class="flex items-center gap-3.5">
+              <div class="w-10 h-10 rounded-xl bg-white p-1 shrink-0 flex items-center justify-center shadow-inner">
                 <img :src="'/images/badges/' + t.image_name" :alt="t.title" class="max-h-full max-w-full object-contain" />
               </div>
               <div>
-                <div class="flex items-center gap-2">
-                  <h4 class="text-sm font-bold" :class="t.is_achieved ? 'text-emerald-400' : 'text-white'">{{ t.title }}</h4>
-                  <span class="text-[10px] px-1.5 py-0.5 rounded font-mono" :class="t.category === 'Superman' ? 'bg-purple-900 text-purple-200' : (t.category === 'Elite' ? 'bg-blue-900 text-blue-200' : 'bg-slate-700 text-slate-300')">
-                    {{ t.category }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-400">Required: Chart {{ t.chart }} Level {{ t.level_display }} (Both Strength & Cardio)</p>
+                <h4 class="text-sm font-bold text-white">{{ t.title }}</h4>
+                <p class="text-xs font-mono text-slate-400">Target Standard: Chart {{ t.chart }} • Level {{ t.level_display }}</p>
               </div>
             </div>
 
-            <div class="text-right shrink-0">
-              <span v-if="t.is_achieved" class="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded border border-emerald-500/30">
-                ✓ Unlocked
-              </span>
-              <span v-else class="text-xs text-slate-500 font-medium">
-                In Progress
+            <div class="shrink-0 text-right">
+              <span
+                class="text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider font-mono"
+                :class="t.is_achieved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'"
+              >
+                {{ t.is_achieved ? '✓ Qualified' : 'In Progress' }}
               </span>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Close Button -->
+      <div class="mt-8 pt-4 border-t border-slate-800">
+        <button
+          @click="emit('close')"
+          class="w-full btn-control-primary bg-cyan-500 hover:bg-cyan-400 text-slate-950"
+        >
+          Return to Mission
+        </button>
       </div>
     </div>
   </div>

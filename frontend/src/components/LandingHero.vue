@@ -5,6 +5,7 @@ const emit = defineEmits<{
   (e: 'open-login', pilot?: { username: string }): void;
   (e: 'start-guest-workout'): void;
   (e: 'open-sheet'): void;
+  (e: 'open-charts'): void;
 }>();
 
 // Interactive Age Standards Explorer Data
@@ -188,11 +189,11 @@ const pilotShortcuts = [
         Scientifically calibrated progression to elevate anyone from complete inactivity to supersonic combat readiness.
       </p>
 
-      <!-- Primary Action Buttons -->
-      <div class="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-xl mx-auto mb-12">
+      <!-- Primary Action Buttons (Standardised Sizing) -->
+      <div class="flex flex-wrap items-center justify-center gap-3.5 max-w-2xl mx-auto mb-12">
         <button
           @click="emit('start-guest-workout')"
-          class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-base shadow-lg shadow-emerald-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2.5 pulse-radar cursor-pointer"
+          class="btn-control-primary bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/25 pulse-radar"
         >
           <span>⚡</span>
           <span>Test Drive 11-Minute Workout</span>
@@ -200,15 +201,23 @@ const pilotShortcuts = [
 
         <button
           @click="emit('open-login')"
-          class="w-full sm:w-auto px-7 py-4 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-white font-bold text-base transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 cursor-pointer"
+          class="btn-control-secondary bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white"
         >
           <span>🎖️</span>
           <span>Pilot Sign In / Register</span>
         </button>
 
         <button
+          @click="emit('open-charts')"
+          class="btn-control-secondary bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-cyan-300"
+        >
+          <span>📊</span>
+          <span>System Charts (1–6)</span>
+        </button>
+
+        <button
           @click="emit('open-sheet')"
-          class="w-full sm:w-auto px-5 py-4 rounded-xl bg-slate-900/60 hover:bg-slate-800/60 border border-slate-700 text-slate-300 hover:text-white font-medium text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer"
+          class="btn-control-tertiary bg-slate-900/70 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white"
         >
           <span>📄</span>
           <span>Print Gym Form</span>

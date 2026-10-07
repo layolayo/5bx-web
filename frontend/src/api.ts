@@ -129,3 +129,16 @@ export async function adjustLevels(strength_chart: number, strength_level: numbe
   localStorage.setItem('5bx_user_profile', JSON.stringify(data));
   return data;
 }
+
+export async function fetchSystemCharts(): Promise<import('./types').SystemChartsData> {
+  try {
+    const res = await fetch(`${BASE_URL}/charts`);
+    if (!res.ok) return { charts: [], instructions: [] };
+    const data = await res.json();
+    localStorage.setItem('5bx_system_charts', JSON.stringify(data));
+    return data;
+  } catch (e) {
+    const cached = localStorage.getItem('5bx_system_charts');
+    return cached ? JSON.parse(cached) : { charts: [], instructions: [] };
+  }
+}
