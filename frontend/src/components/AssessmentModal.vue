@@ -181,17 +181,17 @@ function startDrill(ex: any) {
 function beginDrillCountdown() {
   drillStage.value = 'countdown';
   drillCountdown.value = 3;
-  playCountdownBeep(440);
+  playCountdownBeep(false);
 
   drillCountdownTimeout = setTimeout(() => {
     drillCountdown.value = 2;
-    playCountdownBeep(440);
+    playCountdownBeep(false);
     drillCountdownTimeout = setTimeout(() => {
       drillCountdown.value = 1;
-      playCountdownBeep(440);
+      playCountdownBeep(false);
       drillCountdownTimeout = setTimeout(() => {
         drillCountdown.value = 'GO!';
-        playCountdownBeep(880);
+        playCountdownBeep(true);
         drillCountdownTimeout = setTimeout(() => {
           startDrillClock();
         }, 500);
@@ -208,7 +208,7 @@ function startDrillClock() {
       if (drillSecondsRemaining.value > 1) {
         drillSecondsRemaining.value--;
         if (drillSecondsRemaining.value <= 3) {
-          playCountdownBeep(440);
+          playCountdownBeep(false);
         }
       } else {
         drillSecondsRemaining.value = 0;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import Navbar from './components/Navbar.vue';
 import LandingHero from './components/LandingHero.vue';
 import TodayWorkoutView from './components/TodayWorkout.vue';
