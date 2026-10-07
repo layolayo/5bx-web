@@ -42,6 +42,15 @@ const currentChartInstructions = computed(() => {
   return allInstructions.value.filter((i) => i.chart === selectedChart.value);
 });
 
+const strengthInstructions = computed(() => {
+  return currentChartInstructions.value.filter((i) => i.exercise <= 4);
+});
+
+const cardioInstructions = computed(() => {
+  return currentChartInstructions.value.filter((i) => i.exercise >= 5);
+});
+
+
 function getLevelLabel(level: number): string {
   return levelNames[level - 1] || 'D-';
 }
@@ -113,36 +122,109 @@ function showExercise(exNum: number) {
       </div>
     </div>
 
-    <!-- Movement Header Thumbnails Bar (Clickable for details) -->
-    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
-      <div
-        v-for="instr in currentChartInstructions"
-        :key="instr.exercise"
-        @click="selectedExerciseDetail = instr"
-        class="glass-panel glass-panel-hover rounded-xl p-3 cursor-pointer flex flex-col items-center text-center group"
-      >
-        <div class="w-full h-16 bg-white rounded-lg p-1.5 flex items-center justify-center mb-2 shadow-inner">
-          <img :src="'/images/' + instr.image_path" :alt="instr.name" class="max-h-full max-w-full object-contain" />
+    <!-- Movement Overview: Split into Dedicated Strength (Emerald) and Cardio (Cyan) Rows -->
+    <div class="space-y-6">
+      <!-- Row 1: Strength Disciplines (Movements 1 to 4 - Emerald Green) -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-500/40"></span>
+            <h3 class="text-xs font-black uppercase tracking-wider text-emerald-300">Strength Track (Movements 1 to 4)</h3>
+            <span class="hidden sm:inline text-[11px] text-slate-400">• Calisthenics &amp; core mobility</span>
+          </div>
+          <span class="text-[10px] font-mono text-emerald-400/90 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-md">
+            6 Min Allocation
+          </span>
         </div>
-        <div class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">Ex {{ instr.exercise }} (Click info)</div>
-        <div class="text-xs font-bold text-white group-hover:text-cyan-300 truncate w-full">{{ instr.name }}</div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div
+            v-for="instr in strengthInstructions"
+            :key="instr.exercise"
+            @click="selectedExerciseDetail = instr"
+            class="bg-slate-900/80 hover:bg-emerald-950/30 border border-emerald-500/30 hover:border-emerald-400/70 rounded-xl p-3 cursor-pointer flex flex-col items-center text-center group transition-all shadow-lg hover:shadow-emerald-950/30"
+          >
+            <div class="w-full h-16 bg-white rounded-lg p-1.5 flex items-center justify-center mb-2 shadow-inner group-hover:scale-[1.02] transition-transform">
+              <img :src="'/images/' + instr.image_path" :alt="instr.name" class="max-h-full max-w-full object-contain" />
+            </div>
+            <div class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Ex {{ instr.exercise }} • Info</div>
+            <div class="text-xs font-bold text-white group-hover:text-emerald-300 truncate w-full" :title="instr.name">{{ instr.name }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Row 2: Cardio Disciplines (Movements 5 to 7 - Cyan) -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between px-1">
+          <div class="flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 ring-2 ring-cyan-500/40"></span>
+            <h3 class="text-xs font-black uppercase tracking-wider text-cyan-300">Cardio Track (Aerobic Disciplines)</h3>
+            <span class="hidden sm:inline text-[11px] text-slate-400">• Stationary run or outdoor alternatives</span>
+          </div>
+          <span class="text-[10px] font-mono text-cyan-400/90 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-md">
+            5 Min (Ex 5) or Timed Road Work
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div
+            v-for="instr in cardioInstructions"
+            :key="instr.exercise"
+            @click="selectedExerciseDetail = instr"
+            class="bg-slate-900/80 hover:bg-cyan-950/30 border border-cyan-500/30 hover:border-cyan-400/70 rounded-xl p-3 cursor-pointer flex flex-col items-center text-center group transition-all shadow-lg hover:shadow-cyan-950/30"
+          >
+            <div class="w-full h-16 bg-white rounded-lg p-1.5 flex items-center justify-center mb-2 shadow-inner group-hover:scale-[1.02] transition-transform">
+              <img :src="'/images/' + instr.image_path" :alt="instr.name" class="max-h-full max-w-full object-contain" />
+            </div>
+            <div class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider">
+              Ex {{ instr.exercise }} • {{ instr.exercise === 5 ? 'Standard Aerobic' : 'Outdoor Alternative' }}
+            </div>
+            <div class="text-xs font-bold text-white group-hover:text-cyan-300 truncate w-full" :title="instr.name">{{ instr.name }}</div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- The 12-Rung Matrix Table -->
+    <!-- The 12-Rung Matrix Table with Grouped Strength & Cardio Headers -->
     <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs tabular-nums border-collapse">
           <thead>
+            <!-- Group Tier Header -->
+            <tr class="bg-slate-950/95 border-b border-slate-800 text-[10px] tracking-wider uppercase">
+              <th rowspan="2" class="py-3 px-4 font-black text-slate-300 border-r border-slate-800 align-middle text-center w-16">
+                Rung
+              </th>
+              <th colspan="4" class="py-2.5 px-3 text-center font-black bg-emerald-950/50 text-emerald-300 border-b border-r border-emerald-500/30">
+                Strength Disciplines (Movements 1 to 4 • Emerald)
+              </th>
+              <th colspan="3" class="py-2.5 px-3 text-center font-black bg-cyan-950/50 text-cyan-300 border-b border-cyan-500/30">
+                Cardio Disciplines (Aerobic Capacity • Cyan)
+              </th>
+            </tr>
+            <!-- Individual Column Headers -->
             <tr class="bg-slate-950/90 border-b border-slate-800 text-slate-400 uppercase tracking-wider text-[10px]">
-              <th class="py-3.5 px-4 font-bold">Rung</th>
-              <th class="py-3.5 px-3 font-bold text-emerald-400 cursor-pointer" @click="showExercise(1)">Ex 1: Stretch</th>
-              <th class="py-3.5 px-3 font-bold text-emerald-400 cursor-pointer" @click="showExercise(2)">Ex 2: Sit-Up</th>
-              <th class="py-3.5 px-3 font-bold text-emerald-400 cursor-pointer" @click="showExercise(3)">Ex 3: Back Arch</th>
-              <th class="py-3.5 px-3 font-bold text-emerald-400 cursor-pointer" @click="showExercise(4)">Ex 4: Push-Up</th>
-              <th class="py-3.5 px-4 font-bold text-cyan-400 cursor-pointer" @click="showExercise(5)">Ex 5: Stationary Run</th>
-              <th class="py-3.5 px-3 font-bold text-cyan-300">Alt 1-Mi Run</th>
-              <th class="py-3.5 px-3 font-bold text-cyan-300">Alt 2-Mi Walk</th>
+              <th class="py-2.5 px-3 font-bold text-emerald-400 cursor-pointer hover:text-emerald-300 transition-colors" @click="showExercise(1)">
+                Ex 1: Stretch
+              </th>
+              <th class="py-2.5 px-3 font-bold text-emerald-400 cursor-pointer hover:text-emerald-300 transition-colors" @click="showExercise(2)">
+                Ex 2: Sit-Up
+              </th>
+              <th class="py-2.5 px-3 font-bold text-emerald-400 cursor-pointer hover:text-emerald-300 transition-colors" @click="showExercise(3)">
+                Ex 3: Back Arch
+              </th>
+              <th class="py-2.5 px-3 font-bold text-emerald-400 cursor-pointer hover:text-emerald-300 transition-colors border-r border-slate-800" @click="showExercise(4)">
+                Ex 4: Push-Up
+              </th>
+              <th class="py-2.5 px-4 font-bold text-cyan-400 cursor-pointer hover:text-cyan-300 transition-colors" @click="showExercise(5)">
+                Ex 5: Stationary Run
+              </th>
+              <th class="py-2.5 px-3 font-bold text-cyan-300 cursor-pointer hover:text-cyan-200 transition-colors" @click="showExercise(6)">
+                {{ selectedChart === 1 ? 'Alt 0.5-Mi Run' : 'Alt 1-Mi Run' }}
+              </th>
+              <th class="py-2.5 px-3 font-bold text-cyan-300 cursor-pointer hover:text-cyan-200 transition-colors" @click="showExercise(7)">
+                {{ selectedChart === 1 ? 'Alt 1-Mi Walk' : 'Alt 2-Mi Walk' }}
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800/60 font-mono">
@@ -157,40 +239,50 @@ function showExercise(exNum: number) {
               }"
             >
               <!-- Level Label -->
-              <td class="py-3 px-4 font-black text-sm text-white flex items-center gap-2">
+              <td class="py-3 px-4 font-black text-sm text-white flex items-center justify-between border-r border-slate-800/80">
                 <span>{{ getLevelLabel(row.level) }}</span>
-                <span v-if="isCurrentStrength(row.level)" class="text-[9px] bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black font-sans">
-                  S
-                </span>
-                <span v-if="isCurrentCardio(row.level)" class="text-[9px] bg-cyan-400 text-slate-950 px-1.5 py-0.5 rounded font-black font-sans">
-                  C
-                </span>
+                <div class="flex items-center gap-1">
+                  <span v-if="isCurrentStrength(row.level)" class="text-[9px] bg-emerald-500 text-slate-950 px-1.5 py-0.5 rounded font-black font-sans shadow-sm" title="Your Current Strength Rung">
+                    S
+                  </span>
+                  <span v-if="isCurrentCardio(row.level)" class="text-[9px] bg-cyan-400 text-slate-950 px-1.5 py-0.5 rounded font-black font-sans shadow-sm" title="Your Current Cardio Rung">
+                    C
+                  </span>
+                </div>
               </td>
 
-              <!-- Exercise Targets -->
+              <!-- Strength Targets (Movements 1 to 4) -->
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex1 }}</td>
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex2 }}</td>
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex3 }}</td>
-              <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex4 }}</td>
+              <td class="py-3 px-3 text-slate-200 font-semibold border-r border-slate-800/80">{{ row.ex4 }}</td>
+
+              <!-- Cardio Targets (Movements 5 to 7) -->
               <td class="py-3 px-4 font-bold text-cyan-300">
                 {{ row.ex5 }}
                 <span v-if="selectedChart >= 5" class="text-[10px] text-slate-400 font-sans">+ jumps</span>
               </td>
-              <td class="py-3 px-3 text-slate-400">{{ formatDuration(row.ex5_run) }}</td>
-              <td class="py-3 px-3 text-slate-400">{{ formatDuration(row.ex5_walk) }}</td>
+              <td class="py-3 px-3 text-cyan-400/90 font-mono">{{ formatDuration(row.ex5_run) }}</td>
+              <td class="py-3 px-3 text-cyan-400/90 font-mono">{{ formatDuration(row.ex5_walk) }}</td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Exercise Posture / Technique Modal Drawer -->
+    <!-- Exercise Posture / Technique Modal Drawer with Contextual Theming -->
     <div v-if="selectedExerciseDetail" class="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative">
+      <div
+        class="bg-slate-900 border rounded-3xl w-full max-w-lg p-6 sm:p-8 shadow-2xl relative"
+        :class="selectedExerciseDetail.exercise <= 4 ? 'border-emerald-500/40 shadow-emerald-950/30' : 'border-cyan-500/40 shadow-cyan-950/30'"
+      >
         <div class="flex justify-between items-center pb-3 border-b border-slate-800 mb-4">
           <div>
-            <span class="text-[10px] font-bold text-cyan-400 uppercase tracking-wider block">
-              Chart {{ selectedExerciseDetail.chart }} • Movement {{ selectedExerciseDetail.exercise }}
+            <span
+              class="text-[10px] font-bold uppercase tracking-wider block"
+              :class="selectedExerciseDetail.exercise <= 4 ? 'text-emerald-400' : 'text-cyan-400'"
+            >
+              Chart {{ selectedExerciseDetail.chart }} • Movement {{ selectedExerciseDetail.exercise }} ({{ selectedExerciseDetail.exercise <= 4 ? 'Strength Discipline' : 'Cardio Discipline' }})
             </span>
             <h3 class="text-xl font-black text-white">{{ selectedExerciseDetail.name }}</h3>
           </div>
@@ -212,7 +304,8 @@ function showExercise(exNum: number) {
 
         <button
           @click="selectedExerciseDetail = null"
-          class="w-full btn-control-primary bg-cyan-500 hover:bg-cyan-400 text-slate-950"
+          class="w-full btn-control-primary"
+          :class="selectedExerciseDetail.exercise <= 4 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'"
         >
           Close Movement Details
         </button>
