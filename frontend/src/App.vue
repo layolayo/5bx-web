@@ -301,6 +301,8 @@ async function handleAdjustSave(payload: { s_chart: number; s_level: number; c_c
 function navigate(tab: string) {
   if (tab === 'badges') {
     showBadges.value = true;
+  } else if (tab === 'sheet' && !profile.value) {
+    showLogin.value = true;
   } else {
     activeTab.value = tab;
   }
@@ -399,7 +401,6 @@ onMounted(() => {
         v-if="!profile && activeTab === 'workout'"
         @open-login="handleOpenLoginWithPilot"
         @start-guest-workout="startGuestWorkout"
-        @open-sheet="activeTab = 'sheet'"
         @open-charts="activeTab = 'charts'"
       />
 
@@ -437,10 +438,10 @@ onMounted(() => {
         @close="activeTab = 'workout'"
       />
 
-      <!-- Single-Sheet Printable Form (available to all) -->
+      <!-- Single-Sheet Printable Form (Authenticated pilot only) -->
       <PrintSheet
-        v-if="activeTab === 'sheet'"
-        :workout="workout || guestWorkoutTemplate"
+        v-if="profile && workout && activeTab === 'sheet'"
+        :workout="workout"
         :profile="profile"
         @close="activeTab = 'workout'"
       />

@@ -4,7 +4,6 @@ import { ref } from 'vue';
 const emit = defineEmits<{
   (e: 'open-login'): void;
   (e: 'start-guest-workout'): void;
-  (e: 'open-sheet'): void;
   (e: 'open-charts'): void;
 }>();
 
@@ -206,14 +205,6 @@ const movements = [
         >
           <span>📊</span>
           <span>System Charts (1–6)</span>
-        </button>
-
-        <button
-          @click="emit('open-sheet')"
-          class="btn-control-tertiary bg-slate-900/70 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white"
-        >
-          <span>📄</span>
-          <span>Print Gym Form</span>
         </button>
       </div>
     </section>

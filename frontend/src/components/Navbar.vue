@@ -72,9 +72,6 @@ const isMenuOpen = ref(false);
         <button @click="emit('navigate', 'charts')" class="hover:text-cyan-400 transition-colors cursor-pointer">
           System Charts (1–6)
         </button>
-        <button @click="emit('navigate', 'sheet')" class="hover:text-cyan-400 transition-colors cursor-pointer">
-          Single-Sheet Gym Form
-        </button>
       </nav>
 
       <!-- Right Side: Unified Pilot Menu or Sign In -->
