@@ -1,0 +1,18 @@
+[Unit]
+Description=Royal Canadian Air Force 5BX Web Application
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/matthew/5bx-web
+ExecStart=/home/matthew/5bx-web/fivebx-server
+Restart=always
+RestartSec=5
+User=matthew
+EnvironmentFile=/home/matthew/5bx-web/.env
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=fivebx-server
+
+[Install]
+WantedBy=multi-user.target
