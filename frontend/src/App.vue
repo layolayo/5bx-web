@@ -54,6 +54,7 @@ const showAdjust = ref(false);
 const showBadges = ref(false);
 const showAssessment = ref(false);
 const layoffStatus = ref<LayoffStatus | null>(null);
+const activeCardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
 const loginPrefill = ref('');
 const isGuestSession = ref(false);
 const celebrationResult = ref<WorkoutSubmissionResult | null>(null);
@@ -229,6 +230,13 @@ async function handleLogout() {
 function startGuestWorkout() {
   workout.value = guestWorkoutTemplate;
   isGuestSession.value = true;
+  activeCardioChoice.value = 'stationary';
+  showTimer.value = true;
+}
+
+function handleStartTimer(mode?: 'stationary' | 'run' | 'walk') {
+  if (mode) activeCardioChoice.value = mode;
+  isGuestSession.value = false;
   showTimer.value = true;
 }
 
@@ -374,7 +382,7 @@ onMounted(() => {
         :profile="profile"
         :highest-badge="highestBadge"
         :layoff-status="layoffStatus"
-        @start-timer="showTimer = true; isGuestSession = false"
+        @start-timer="handleStartTimer"
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-assessment="showAssessment = true"
@@ -388,7 +396,7 @@ onMounted(() => {
         :profile="profile"
         :highest-badge="highestBadge"
         :layoff-status="layoffStatus"
-        @start-timer="showTimer = true; isGuestSession = false"
+        @start-timer="handleStartTimer"
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-badges="showBadges = true"
@@ -424,6 +432,7 @@ onMounted(() => {
       v-if="showTimer && (workout || guestWorkoutTemplate)"
       :workout="workout || guestWorkoutTemplate"
       :is-guest="isGuestSession"
+      :initial-cardio-mode="activeCardioChoice"
       @close="showTimer = false"
       @submit="handleSubmitWorkout"
     />

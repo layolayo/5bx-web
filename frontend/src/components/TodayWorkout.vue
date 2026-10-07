@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'start-timer'): void;
+  (e: 'start-timer', mode?: 'stationary' | 'run' | 'walk'): void;
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
   (e: 'open-badges'): void;
@@ -158,7 +158,7 @@ const muscleFocusMap: Record<number, string> = {
       <div class="mt-8 pt-6 border-t border-slate-800/80 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 relative z-10">
         <!-- Main Launch Workout Button -->
         <button
-          @click="emit('start-timer')"
+          @click="emit('start-timer', cardioChoice)"
           class="btn-control-primary flex-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 shadow-xl shadow-emerald-500/20 pulse-radar"
         >
           <span class="text-lg">⏱️</span>

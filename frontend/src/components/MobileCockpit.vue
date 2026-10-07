@@ -10,7 +10,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'start-timer'): void;
+  (e: 'start-timer', mode?: 'stationary' | 'run' | 'walk'): void;
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
   (e: 'toggle-kiss'): void;
@@ -104,7 +104,7 @@ function formatMinutesSeconds(seconds: number) {
 
     <!-- Giant Thumb-Friendly Launch Button (KISS Core) -->
     <button
-      @click="emit('start-timer')"
+      @click="emit('start-timer', cardioChoice)"
       class="w-full py-5 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 active:scale-[0.98] text-slate-950 font-black text-lg uppercase tracking-tight shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-3 transition-transform cursor-pointer"
     >
       <span class="text-2xl">⏱️</span>
