@@ -352,7 +352,7 @@ const muscleFocusMap: Record<number, string> = {
                     :class="cardioChoice === 'run' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
                   >
                     <span class="text-sm">🏃</span>
-                    <span>1-Mile Jog/Run</span>
+                    <span>{{ workout.cardio_chart === 1 ? '0.5-Mi Run (0.8 km)' : '1-Mi Run (1.6 km)' }}</span>
                   </button>
                   <button
                     type="button"
@@ -361,7 +361,7 @@ const muscleFocusMap: Record<number, string> = {
                     :class="cardioChoice === 'walk' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-950/80 text-slate-400 hover:text-white border border-slate-800'"
                   >
                     <span class="text-sm">🚶</span>
-                    <span>2-Mile Walk</span>
+                    <span>{{ workout.cardio_chart === 1 ? '1-Mi Walk (1.6 km)' : '2-Mi Walk (3.2 km)' }}</span>
                   </button>
                 </div>
               </div>
@@ -388,7 +388,7 @@ const muscleFocusMap: Record<number, string> = {
                   &lt; {{ formatMinutesSeconds(cardioExercise.alt_run_time_seconds) }}
                 </div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">
-                  {{ cardioDistanceMiles }} Mile ({{ cardioExercise.alt_run_time_seconds }}s)
+                  {{ cardioDistanceMiles }} mi ({{ (cardioDistanceMiles * 1.60934).toFixed(1) }} km)
                 </div>
               </div>
 
@@ -398,7 +398,7 @@ const muscleFocusMap: Record<number, string> = {
                   &lt; {{ formatMinutesSeconds(cardioExercise.alt_walk_time_seconds) }}
                 </div>
                 <div class="text-[10px] font-mono text-slate-400 mt-0.5">
-                  {{ cardioDistanceMiles }} Miles ({{ cardioExercise.alt_walk_time_seconds }}s)
+                  {{ cardioDistanceMiles }} mi ({{ (cardioDistanceMiles * 1.60934).toFixed(1) }} km)
                 </div>
               </div>
             </div>
@@ -418,10 +418,10 @@ const muscleFocusMap: Record<number, string> = {
                   Treadmill Running Machine Setting
                 </span>
                 <div class="text-sm font-black text-white mt-0.5">
-                  Set speed to at least <span class="text-cyan-300 font-mono">{{ treadmillSpeed.mph.toFixed(1) }} mph</span> (<span class="text-cyan-300 font-mono">{{ treadmillSpeed.kph.toFixed(1) }} km/h</span>)
+                  Set speed to at least <span class="text-cyan-300 font-mono">{{ treadmillSpeed.kph.toFixed(1) }} km/h</span> (<span class="text-cyan-300 font-mono">{{ treadmillSpeed.mph.toFixed(1) }} mph</span>)
                 </div>
                 <span class="text-[11px] text-slate-400 block">
-                  Complete {{ cardioDistanceMiles }} mile(s) within {{ formatMinutesSeconds(cardioChoice === 'run' ? cardioExercise.alt_run_time_seconds : cardioExercise.alt_walk_time_seconds) }} to pass this rung.
+                  Complete {{ cardioDistanceMiles }} mi ({{ (cardioDistanceMiles * 1.60934).toFixed(1) }} km) within {{ formatMinutesSeconds(cardioChoice === 'run' ? cardioExercise.alt_run_time_seconds : cardioExercise.alt_walk_time_seconds) }} to pass this rung.
                 </span>
               </div>
             </div>

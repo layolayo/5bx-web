@@ -14,6 +14,7 @@ import LevelAdjustModal from './components/LevelAdjustModal.vue';
 import MobileCockpit from './components/MobileCockpit.vue';
 import SessionDetailModal from './components/SessionDetailModal.vue';
 import AssessmentModal from './components/AssessmentModal.vue';
+import AccountSettingsModal from './components/AccountSettingsModal.vue';
 import {
   UserProfile,
   TodayWorkout,
@@ -53,6 +54,7 @@ const showLogin = ref(false);
 const showAdjust = ref(false);
 const showBadges = ref(false);
 const showAssessment = ref(false);
+const showSettings = ref(false);
 const layoffStatus = ref<LayoffStatus | null>(null);
 const activeCardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
 const loginPrefill = ref('');
@@ -227,6 +229,16 @@ async function handleLogout() {
   activeTab.value = 'workout';
 }
 
+function handleAccountDeleted() {
+  profile.value = null;
+  workout.value = null;
+  history.value = [];
+  highestBadge.value = null;
+  layoffStatus.value = null;
+  activeTab.value = 'workout';
+  showSettings.value = false;
+}
+
 function startGuestWorkout() {
   workout.value = guestWorkoutTemplate;
   isGuestSession.value = true;
@@ -375,6 +387,7 @@ onMounted(() => {
       @open-assessment="showAssessment = true"
       @open-badges="showBadges = true"
       @open-sheet="activeTab = 'sheet'"
+      @open-settings="showSettings = true"
       @logout="handleLogout"
       @set-layout-preference="handleSetLayoutPreference"
     />
@@ -549,6 +562,14 @@ onMounted(() => {
       :current-cardio-display="profile.cardio_level_display"
       @close="showAssessment = false"
       @applied="handleAssessmentApplied"
+    />
+
+    <!-- Account Security & Settings Modal -->
+    <AccountSettingsModal
+      v-if="showSettings && profile"
+      :profile="profile"
+      @close="showSettings = false"
+      @account-deleted="handleAccountDeleted"
     />
   </div>
 </template>

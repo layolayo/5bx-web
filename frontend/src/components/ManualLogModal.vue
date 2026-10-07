@@ -38,6 +38,25 @@ const cardioDistanceMiles = computed(() => {
   return 0;
 });
 
+const runLabel = computed(() => {
+  return props.workout.cardio_chart === 1 ? '0.5 mi (0.8 km)' : '1.0 mi (1.6 km)';
+});
+
+const walkLabel = computed(() => {
+  return props.workout.cardio_chart === 1 ? '1.0 mi (1.6 km)' : '2.0 mi (3.2 km)';
+});
+
+const treadmillSpeed = computed(() => {
+  const ex5 = props.workout.exercises.find((ex) => ex.exercise_number === 5);
+  if (!ex5) return { mph: 0, kph: 0 };
+  const targetSec = cardioMode.value === 'run' ? ex5.alt_run_time_seconds : ex5.alt_walk_time_seconds;
+  if (!targetSec || targetSec <= 0 || cardioDistanceMiles.value <= 0) return { mph: 0, kph: 0 };
+  const hours = targetSec / 3600.0;
+  const mph = cardioDistanceMiles.value / hours;
+  const kph = mph * 1.60934;
+  return { mph, kph };
+});
+
 function parseTimeStringToSeconds(str: string): number {
   if (!str) return 0;
   const trimmed = str.trim();
@@ -198,7 +217,7 @@ function submitLog() {
               Ex 5: Cardio Track Discipline
             </label>
             <span class="text-[10px] font-mono text-cyan-400">
-              {{ cardioMode === 'stationary' ? 'Indoor 6-Min' : (cardioMode === 'run' ? '1-Mile Run' : '2-Mile Walk') }}
+              {{ cardioMode === 'stationary' ? 'Indoor 6-Min' : (cardioMode === 'run' ? `${runLabel} Run` : `${walkLabel} Walk`) }}
             </span>
           </div>
 
@@ -211,6 +230,7 @@ function submitLog() {
             >
               <span>👟</span>
               <span class="text-[11px]">Stationary</span>
+              <span class="text-[9px] opacity-75">Run</span>
             </button>
             <button
               type="button"
@@ -219,7 +239,8 @@ function submitLog() {
               :class="cardioMode === 'run' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
             >
               <span>🏃</span>
-              <span class="text-[11px]">1-Mile Run</span>
+              <span class="text-[11px]">{{ runLabel }}</span>
+              <span class="text-[9px] opacity-75">Run</span>
             </button>
             <button
               type="button"
@@ -228,24 +249,30 @@ function submitLog() {
               :class="cardioMode === 'walk' ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
             >
               <span>🚶</span>
-              <span class="text-[11px]">2-Mile Walk</span>
+              <span class="text-[11px]">{{ walkLabel }}</span>
+              <span class="text-[9px] opacity-75">Walk</span>
             </button>
           </div>
 
           <!-- Target Banner for Ex 5 -->
-          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 mb-3 text-xs flex justify-between items-center">
-            <span class="text-slate-400 text-[11px]">Required Standard:</span>
-            <span class="font-mono font-bold text-cyan-300">
-              <template v-if="cardioMode === 'stationary'">
-                {{ workout.exercises[4]?.target_reps }} steps (+ 10 scissor jumps / 75 steps)
-              </template>
-              <template v-else-if="cardioMode === 'run'">
-                Under {{ formatDuration(workout.exercises[4]?.alt_run_time_seconds) }} ({{ workout.exercises[4]?.alt_run_time_seconds }}s)
-              </template>
-              <template v-else>
-                Under {{ formatDuration(workout.exercises[4]?.alt_walk_time_seconds) }} ({{ workout.exercises[4]?.alt_walk_time_seconds }}s)
-              </template>
-            </span>
+          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 mb-3 text-xs flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-400 text-[11px]">Required Standard:</span>
+              <span class="font-mono font-bold text-cyan-300">
+                <template v-if="cardioMode === 'stationary'">
+                  {{ workout.exercises[4]?.target_reps }} steps (+ 10 scissor jumps / 75 steps)
+                </template>
+                <template v-else-if="cardioMode === 'run'">
+                  Under {{ formatDuration(workout.exercises[4]?.alt_run_time_seconds) }} ({{ runLabel }})
+                </template>
+                <template v-else>
+                  Under {{ formatDuration(workout.exercises[4]?.alt_walk_time_seconds) }} ({{ walkLabel }})
+                </template>
+              </span>
+            </div>
+            <div v-if="cardioMode !== 'stationary' && treadmillSpeed.mph > 0" class="text-[10px] font-mono text-slate-400">
+              Speed: <span class="text-cyan-300 font-bold">≥ {{ treadmillSpeed.kph.toFixed(1) }} km/h</span> (<span class="text-cyan-300 font-bold">{{ treadmillSpeed.mph.toFixed(1) }} mph</span>)
+            </div>
           </div>
 
           <!-- Stationary Input -->
@@ -298,7 +325,7 @@ function submitLog() {
               <div class="text-[11px] text-slate-300 mt-1.5 flex items-center justify-between">
                 <span>Equivalent Pace:</span>
                 <span class="font-bold text-white">
-                  {{ achievedSpeed.mph.toFixed(1) }} mph ({{ achievedSpeed.kph.toFixed(1) }} km/h)
+                  {{ achievedSpeed.kph.toFixed(1) }} km/h ({{ achievedSpeed.mph.toFixed(1) }} mph)
                 </span>
               </div>
             </div>

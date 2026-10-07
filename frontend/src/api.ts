@@ -208,3 +208,32 @@ export async function applyAssessment(payload: ApplyAssessmentPayload): Promise<
   return data;
 }
 
+export async function changePassword(current_password: string, new_password: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/change-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ current_password, new_password }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to update password');
+  }
+}
+
+export async function deleteAccount(password: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/auth/account`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to delete account');
+  }
+  localStorage.removeItem('5bx_user_profile');
+  localStorage.removeItem('5bx_today_workout');
+  localStorage.removeItem('5bx_history');
+  localStorage.removeItem('5bx_badges');
+}
+
+

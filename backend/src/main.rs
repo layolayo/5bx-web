@@ -19,7 +19,7 @@ mod models;
 use config::Config;
 use handlers::{
     assessment_handlers::{apply_assessment, evaluate_diagnostic, get_layoff_status},
-    auth_handlers::{login, logout, me, register},
+    auth_handlers::{change_password, delete_account, login, logout, me, register},
     badge_handlers::get_user_badges,
     profile_handlers::{manual_level_adjustment, update_profile},
     static_handlers::static_handler,
@@ -67,6 +67,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route("/auth/login", post(login))
         .route("/auth/logout", post(logout))
         .route("/auth/me", get(me))
+        .route("/auth/change-password", post(change_password))
+        .route("/auth/account", delete(delete_account))
         .route("/workout/today", get(get_today_workout))
         .route("/workout/submit", post(submit_workout))
         .route("/workout/history", get(get_workout_history))

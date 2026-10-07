@@ -335,13 +335,13 @@ onUnmounted(() => {
               ]"
             >
               <div class="text-xs font-black uppercase flex items-center gap-1">
-                <span>🏃</span> 1-Mile Run
+                <span>🏃</span> {{ workout.cardio_chart === 1 ? '0.5-Mi Run' : '1-Mi Run' }}
               </div>
               <div class="text-[11px] font-bold text-cyan-300 mt-1">
                 &lt; {{ formatDuration(workout.exercises[4]?.alt_run_time_seconds) }}
               </div>
               <div class="text-[10px] text-slate-500 mt-0.5">
-                {{ workout.cardio_chart === 1 ? '0.5 mi' : '1.0 mi' }} run
+                {{ workout.cardio_chart === 1 ? '0.5 mi (0.8 km)' : '1.0 mi (1.6 km)' }} run
               </div>
             </button>
 
@@ -357,13 +357,13 @@ onUnmounted(() => {
               ]"
             >
               <div class="text-xs font-black uppercase flex items-center gap-1">
-                <span>🚶</span> 2-Mile Walk
+                <span>🚶</span> {{ workout.cardio_chart === 1 ? '1-Mi Walk' : '2-Mi Walk' }}
               </div>
               <div class="text-[11px] font-bold text-cyan-300 mt-1">
                 &lt; {{ formatDuration(workout.exercises[4]?.alt_walk_time_seconds) }}
               </div>
               <div class="text-[10px] text-slate-500 mt-0.5">
-                {{ workout.cardio_chart === 1 ? '1.0 mi' : '2.0 mi' }} walk
+                {{ workout.cardio_chart === 1 ? '1.0 mi (1.6 km)' : '2.0 mi (3.2 km)' }} walk
               </div>
             </button>
           </div>
@@ -371,7 +371,7 @@ onUnmounted(() => {
           <!-- Speed banner if Run/Walk selected -->
           <div v-if="cardioMode !== 'stationary' && treadmillSpeed.mph > 0" class="mt-3 p-2.5 rounded-xl bg-slate-900 border border-cyan-500/30 text-xs flex items-center justify-between font-mono">
             <span class="text-slate-400">Treadmill Target Speed:</span>
-            <span class="font-bold text-cyan-300">{{ treadmillSpeed.mph.toFixed(1) }} mph ({{ treadmillSpeed.kph.toFixed(1) }} km/h)</span>
+            <span class="font-bold text-cyan-300">{{ treadmillSpeed.kph.toFixed(1) }} km/h ({{ treadmillSpeed.mph.toFixed(1) }} mph)</span>
           </div>
         </div>
 
@@ -655,7 +655,7 @@ onUnmounted(() => {
               {{ totalCardioSecondsEntered <= currentCardioTargetSeconds ? '✓ Target Beaten' : '⚠️ Over Target' }}
             </span>
             <span class="text-white font-bold">
-              {{ achievedPace.mph.toFixed(1) }} mph ({{ achievedPace.kph.toFixed(1) }} km/h)
+              {{ achievedPace.kph.toFixed(1) }} km/h ({{ achievedPace.mph.toFixed(1) }} mph)
             </span>
           </div>
         </div>

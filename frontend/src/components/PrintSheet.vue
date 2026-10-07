@@ -160,22 +160,22 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
                 <!-- Option 2: Timed Run / Jog -->
                 <div v-if="ex.alt_run_time_seconds > 0" class="bg-gray-50 border border-gray-200 rounded p-1">
                   <div class="font-bold text-gray-900 flex items-center justify-between">
-                    <span>2. Run / Jog ({{ runDistanceMiles }} mi)</span>
+                    <span>2. Run / Jog ({{ runDistanceMiles }} mi / {{ (runDistanceMiles * 1.60934).toFixed(1) }} km)</span>
                     <span class="font-mono text-amber-800">≤ {{ formatMmSs(ex.alt_run_time_seconds) }}</span>
                   </div>
                   <div class="text-[9px] text-gray-700 font-mono mt-0.5">
-                    Treadmill: ≥ <strong>{{ calcTreadmillSpeed(runDistanceMiles, ex.alt_run_time_seconds).mph }} mph</strong> ({{ calcTreadmillSpeed(runDistanceMiles, ex.alt_run_time_seconds).kph }} km/h)
+                    Treadmill: ≥ <strong>{{ calcTreadmillSpeed(runDistanceMiles, ex.alt_run_time_seconds).kph }} km/h</strong> ({{ calcTreadmillSpeed(runDistanceMiles, ex.alt_run_time_seconds).mph }} mph)
                   </div>
                 </div>
 
                 <!-- Option 3: Timed Walk -->
                 <div v-if="ex.alt_walk_time_seconds > 0" class="bg-gray-50 border border-gray-200 rounded p-1">
                   <div class="font-bold text-gray-900 flex items-center justify-between">
-                    <span>3. Continuous Walk ({{ walkDistanceMiles }} mi)</span>
+                    <span>3. Continuous Walk ({{ walkDistanceMiles }} mi / {{ (walkDistanceMiles * 1.60934).toFixed(1) }} km)</span>
                     <span class="font-mono text-teal-800">≤ {{ formatMmSs(ex.alt_walk_time_seconds) }}</span>
                   </div>
                   <div class="text-[9px] text-gray-700 font-mono mt-0.5">
-                    Treadmill: ≥ <strong>{{ calcTreadmillSpeed(walkDistanceMiles, ex.alt_walk_time_seconds).mph }} mph</strong> ({{ calcTreadmillSpeed(walkDistanceMiles, ex.alt_walk_time_seconds).kph }} km/h)
+                    Treadmill: ≥ <strong>{{ calcTreadmillSpeed(walkDistanceMiles, ex.alt_walk_time_seconds).kph }} km/h</strong> ({{ calcTreadmillSpeed(walkDistanceMiles, ex.alt_walk_time_seconds).mph }} mph)
                   </div>
                 </div>
               </div>
@@ -193,19 +193,19 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
               <div v-else class="text-[10px] space-y-2">
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />
-                  <span class="font-medium text-gray-800 w-16">Stationary:</span>
+                  <span class="font-medium text-gray-800 w-20">Stationary:</span>
                   <div class="border-b-2 border-dashed border-gray-500 w-14 h-5 text-center text-xs"></div>
                   <span class="text-[9px] text-gray-500">steps</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />
-                  <span class="font-medium text-gray-800 w-16">Run:</span>
+                  <span class="font-medium text-gray-800 w-20 text-[9px] leading-tight">Run ({{ runDistanceMiles }}m/{{ (runDistanceMiles * 1.60934).toFixed(1) }}k):</span>
                   <div class="border-b-2 border-dashed border-gray-500 w-14 h-5 text-center text-xs"></div>
                   <span class="text-[9px] text-gray-500">mm:ss</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />
-                  <span class="font-medium text-gray-800 w-16">Walk:</span>
+                  <span class="font-medium text-gray-800 w-20 text-[9px] leading-tight">Walk ({{ walkDistanceMiles }}m/{{ (walkDistanceMiles * 1.60934).toFixed(1) }}k):</span>
                   <div class="border-b-2 border-dashed border-gray-500 w-14 h-5 text-center text-xs"></div>
                   <span class="text-[9px] text-gray-500">mm:ss</span>
                 </div>

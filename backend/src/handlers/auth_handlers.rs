@@ -13,7 +13,10 @@ use crate::{
     auth::{create_jwt, hash_password, verify_password, AuthUser},
     config::Config,
     engine::{calculate_age, get_age_goal, get_level_display},
-    models::{LoginRequest, RegisterRequest, User, UserProfileResponse},
+    models::{
+        ChangePasswordRequest, DeleteAccountRequest, LoginRequest, RegisterRequest, User,
+        UserProfileResponse,
+    },
 };
 
 pub async fn register(
@@ -263,4 +266,76 @@ pub async fn me(
         age_target_level: target_l,
         age_target_display: get_level_display(target_l).to_string(),
     }))
+}
+
+pub async fn change_password(
+    auth: AuthUser,
+    State((pool, _)): State<(PgPool, Config)>,
+    Json(payload): Json<ChangePasswordRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    if payload.new_password.len() < 8 {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "New password must be at least 8 characters long."})),
+        ));
+    }
+
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+        .bind(auth.user_id)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?
+        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(json!({"error": "User account not found."}))))?;
+
+    if !verify_password(&payload.current_password, &user.password_hash) {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Current password is incorrect."})),
+        ));
+    }
+
+    let new_hash = hash_password(&payload.new_password)
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e}))))?;
+
+    sqlx::query("UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2")
+        .bind(new_hash)
+        .bind(auth.user_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?;
+
+    Ok(Json(json!({"success": true, "message": "Password updated successfully."})))
+}
+
+pub async fn delete_account(
+    auth: AuthUser,
+    State((pool, _)): State<(PgPool, Config)>,
+    jar: CookieJar,
+    Json(payload): Json<DeleteAccountRequest>,
+) -> Result<(CookieJar, Json<serde_json::Value>), (StatusCode, Json<serde_json::Value>)> {
+    let user = sqlx::query_as::<_, User>("SELECT * FROM users WHERE id = $1")
+        .bind(auth.user_id)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?
+        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(json!({"error": "User account not found."}))))?;
+
+    if !verify_password(&payload.password, &user.password_hash) {
+        return Err((
+            StatusCode::UNAUTHORIZED,
+            Json(json!({"error": "Incorrect password. Cannot delete account."})),
+        ));
+    }
+
+    sqlx::query("DELETE FROM users WHERE id = $1")
+        .bind(auth.user_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?;
+
+    let mut removal_cookie = Cookie::new("fivebx_session", "");
+    removal_cookie.set_path("/");
+    removal_cookie.set_max_age(time::Duration::seconds(0));
+
+    Ok((jar.add(removal_cookie), Json(json!({"success": true, "message": "Account successfully deleted."}))))
 }

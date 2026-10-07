@@ -52,6 +52,26 @@ function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const cardioDistanceMiles = computed(() => {
+  if (props.session.cardio_mode === 'run') {
+    return props.session.cardio_chart === 1 ? 0.5 : 1.0;
+  }
+  if (props.session.cardio_mode === 'walk') {
+    return props.session.cardio_chart === 1 ? 1.0 : 2.0;
+  }
+  return 0;
+});
+
+const cardioSpeed = computed(() => {
+  if (props.session.cardio_mode === 'stationary' || !props.session.cardio_duration_secs || props.session.cardio_duration_secs <= 0) {
+    return null;
+  }
+  const hours = props.session.cardio_duration_secs / 3600.0;
+  const mph = cardioDistanceMiles.value / hours;
+  const kph = mph * 1.60934;
+  return { mph, kph };
+});
+
 function cleanStrengthVerdict(v: string | null | undefined): string {
   if (!v) return '';
   const compound = v.match(/Strength\s*\((.+?)\)\s*(?:\||\/)\s*Cardio\s*\((.*)\)\s*$/i);
@@ -220,15 +240,26 @@ async function handleDelete() {
         <div class="mt-2.5 bg-slate-950/70 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
           <div>
             <div class="text-[10px] text-slate-400 font-bold uppercase">5. Cardio Track Discipline</div>
-            <div class="text-sm font-black text-cyan-400 mt-0.5 capitalize">
-              {{ session.cardio_mode === 'run' ? '1-Mile Outdoor Run' : (session.cardio_mode === 'walk' ? '2-Mile Walk' : 'Stationary Run') }}
+            <div class="text-sm font-black text-cyan-400 mt-0.5">
+              <template v-if="session.cardio_mode === 'run'">
+                {{ session.cardio_chart === 1 ? '0.5 mi (0.8 km) Run' : '1.0 mi (1.6 km) Run' }}
+              </template>
+              <template v-else-if="session.cardio_mode === 'walk'">
+                {{ session.cardio_chart === 1 ? '1.0 mi (1.6 km) Walk' : '2.0 mi (3.2 km) Walk' }}
+              </template>
+              <template v-else>
+                Indoor Stationary Run (Ex 5)
+              </template>
             </div>
           </div>
           <div class="text-right font-mono">
             <span class="text-base font-black text-white">
               {{ session.cardio_mode === 'stationary' ? session.reps_5 + ' steps' : formatDuration(session.cardio_duration_secs) }}
             </span>
-            <span v-if="session.cardio_mode !== 'stationary'" class="text-[10px] text-slate-400 block font-sans">
+            <div v-if="session.cardio_mode !== 'stationary' && cardioSpeed" class="text-[10px] text-cyan-300 font-mono mt-0.5">
+              {{ cardioSpeed.kph.toFixed(1) }} km/h ({{ cardioSpeed.mph.toFixed(1) }} mph)
+            </div>
+            <span v-if="session.cardio_mode !== 'stationary'" class="text-[9px] text-slate-500 block font-sans">
               Recorded Time (mm:ss)
             </span>
           </div>

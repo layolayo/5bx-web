@@ -83,7 +83,7 @@ function showExercise(exNum: number) {
 <template>
   <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
     <!-- Header Section -->
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="space-y-4">
       <div>
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/80 border border-cyan-500/30 text-cyan-300 text-xs font-bold uppercase tracking-wider mb-2">
           <span>✈️</span>
@@ -95,17 +95,23 @@ function showExercise(exNum: number) {
         </p>
       </div>
 
-      <!-- Chart Selector Tabs -->
-      <div class="flex flex-wrap gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800">
-        <button
-          v-for="c in [1, 2, 3, 4, 5, 6]"
-          :key="c"
-          @click="selectedChart = c"
-          class="px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer"
-          :class="selectedChart === c ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'"
-        >
-          Chart {{ c }}
-        </button>
+      <!-- Dedicated Responsive Chart Selector Segmented Control -->
+      <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 shadow-lg">
+        <div class="grid grid-cols-6 gap-1 sm:gap-1.5">
+          <button
+            v-for="c in [1, 2, 3, 4, 5, 6]"
+            :key="c"
+            @click="selectedChart = c"
+            class="py-2.5 px-1.5 sm:px-3 text-xs font-black rounded-xl transition-all cursor-pointer text-center flex items-center justify-center gap-1 select-none"
+            :class="selectedChart === c
+              ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25 font-black ring-1 ring-cyan-400'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/80'"
+            :aria-label="'Chart ' + c"
+          >
+            <span class="hidden sm:inline text-[11px] uppercase tracking-wider opacity-80 font-bold">Chart</span>
+            <span class="text-sm sm:text-xs font-black">{{ c }}</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -133,7 +139,7 @@ function showExercise(exNum: number) {
             <span class="hidden sm:inline text-[11px] text-slate-400">• Calisthenics &amp; core mobility</span>
           </div>
           <span class="text-[10px] font-mono text-emerald-400/90 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-md">
-            6 Min Allocation
+            5 Min Allocation (Ex 1–4)
           </span>
         </div>
 
@@ -162,7 +168,7 @@ function showExercise(exNum: number) {
             <span class="hidden sm:inline text-[11px] text-slate-400">• Stationary run or outdoor alternatives</span>
           </div>
           <span class="text-[10px] font-mono text-cyan-400/90 bg-cyan-950/60 border border-cyan-500/30 px-2.5 py-0.5 rounded-md">
-            5 Min (Ex 5) or Timed Road Work
+            6 Min Allocation (Ex 5) or Timed Road Work
           </span>
         </div>
 
@@ -220,10 +226,12 @@ function showExercise(exNum: number) {
                 Ex 5: Stationary Run
               </th>
               <th class="py-2.5 px-3 font-bold text-cyan-300 cursor-pointer hover:text-cyan-200 transition-colors" @click="showExercise(6)">
-                {{ selectedChart === 1 ? 'Alt 0.5-Mi Run' : 'Alt 1-Mi Run' }}
+                <div>{{ selectedChart === 1 ? 'Run 0.5 mi' : 'Run 1.0 mi' }}</div>
+                <div class="text-[9px] font-normal text-slate-400">({{ selectedChart === 1 ? '0.8 km' : '1.6 km' }})</div>
               </th>
               <th class="py-2.5 px-3 font-bold text-cyan-300 cursor-pointer hover:text-cyan-200 transition-colors" @click="showExercise(7)">
-                {{ selectedChart === 1 ? 'Alt 1-Mi Walk' : 'Alt 2-Mi Walk' }}
+                <div>{{ selectedChart === 1 ? 'Walk 1.0 mi' : (selectedChart >= 3 ? 'Jog 2.0 mi' : 'Walk 2.0 mi') }}</div>
+                <div class="text-[9px] font-normal text-slate-400">({{ selectedChart === 1 ? '1.6 km' : '3.2 km' }})</div>
               </th>
             </tr>
           </thead>

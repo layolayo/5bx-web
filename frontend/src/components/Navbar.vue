@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (e: 'open-assessment'): void;
   (e: 'open-badges'): void;
   (e: 'open-sheet'): void;
+  (e: 'open-settings'): void;
   (e: 'logout'): void;
   (e: 'set-layout-preference', pref: 'auto' | 'streamlined' | 'comprehensive'): void;
 }>();
@@ -185,6 +186,17 @@ const isMenuOpen = ref(false);
                 <div>
                   <div class="font-bold text-xs">Milestones & Honours</div>
                   <div class="text-[10px] text-slate-400">View flight achievements and wings</div>
+                </div>
+              </button>
+
+              <button
+                @click="emit('open-settings'); isMenuOpen = false"
+                class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 hover:text-white flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span class="text-base">🔐</span>
+                <div>
+                  <div class="font-bold text-xs">Security &amp; Account</div>
+                  <div class="text-[10px] text-slate-400">Change password or manage account</div>
                 </div>
               </button>
             </div>

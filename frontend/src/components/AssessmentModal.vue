@@ -23,17 +23,17 @@ const emit = defineEmits<{
 type ActiveTab = 'layoff' | 'benchmark' | 'novice';
 const activeTab = ref<ActiveTab>('layoff');
 
-// Candidate Class / Chart State (1 to 6)
+// Candidate Target Chart State (1 to 6)
 const candidateChart = ref<number>(props.currentStrengthChart || 1);
 
-// Class Descriptions based on RCAF 5BX doctrine
-const classDescriptions: Record<number, string> = {
-  1: 'Chart 1 (Class 6): Novice baseline & physical recovery. Uses knee push-ups and gentle forward bends.',
-  2: 'Chart 2 (Class 5): Active foundation. Standard toe push-ups and palm floor touches.',
-  3: 'Chart 3 (Class 4): Regular active conditioning. V-push-ups, 3-point floor touches, and half knee bends.',
-  4: 'Chart 4 (Class 3): Advanced conditioning. Semi-tuck sit-ups and wide posterior extensions.',
-  5: 'Chart 5 (Class 2): Aircrew readiness. High-intensity military candidate standards.',
-  6: 'Chart 6 (Class 1): Elite fighter crew. Maximum RCAF aerobatic & extreme physical standard.',
+// Chart Descriptions based on RCAF 5BX doctrine
+const chartDescriptions: Record<number, string> = {
+  1: 'Chart 1: Novice baseline & physical recovery. Uses knee push-ups and gentle forward bends.',
+  2: 'Chart 2: Active foundation. Standard toe push-ups and palm floor touches.',
+  3: 'Chart 3: Regular active conditioning. V-push-ups, 3-point floor touches, and half knee bends.',
+  4: 'Chart 4: Advanced conditioning. Semi-tuck sit-ups and wide posterior extensions.',
+  5: 'Chart 5: Aircrew readiness. High-intensity military candidate standards.',
+  6: 'Chart 6: Elite flight standard. Maximum RCAF aerobatic & extreme physical standard.',
 };
 
 // System exercise instructions cache
@@ -126,7 +126,7 @@ watch(
   { immediate: true }
 );
 
-// Automatic recalculation when inputs or candidate class changes
+// Automatic recalculation when inputs or target chart changes
 watch(
   [candidateChart, ex1Reps, ex2Reps, ex3Reps, ex4Reps, cardioMode, cardioReps, cardioMin, cardioSec],
   () => {
@@ -299,7 +299,7 @@ async function handleApplyBenchmark() {
       cardio_chart: placementResult.value.cardio_chart,
       cardio_level: placementResult.value.cardio_level,
       assessment_type: 'diagnostic_placement',
-      notes: `Calibrated via Candidate Class ${7 - candidateChart.value} (Chart ${candidateChart.value}) Diagnostic Benchmark: Strength ${placementResult.value.strength_display}, Cardio ${placementResult.value.cardio_display}.`,
+      notes: `Calibrated via Chart ${candidateChart.value} Diagnostic Benchmark: Strength ${placementResult.value.strength_display}, Cardio ${placementResult.value.cardio_display}.`,
     });
     emit('applied');
     emit('close');
@@ -509,17 +509,17 @@ const severityColour = computed(() => {
           </div>
         </div>
 
-        <!-- TAB 2: DIAGNOSTIC BENCHMARK WITH CLASS SELECTION & DRILL TIMERS -->
+        <!-- TAB 2: DIAGNOSTIC BENCHMARK WITH BENCHMARK CHART SELECTION & DRILL TIMERS -->
         <div v-else-if="activeTab === 'benchmark'" class="space-y-6">
-          <!-- 1. CANDIDATE CLASS / CHART SELECTOR -->
+          <!-- 1. TARGET BENCHMARK CHART SELECTOR -->
           <div class="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <div>
                 <span class="text-xs font-black text-white uppercase tracking-wider block">
-                  1. Select Candidate Entry Class
+                  1. Select Target Benchmark Chart (1 to 6)
                 </span>
                 <span class="text-[11px] text-slate-400">
-                  Physical movements vary by chart. Choose the candidate standard you wish to test into:
+                  Calisthenic exercises advance in difficulty across charts. Select the chart standard you wish to test:
                 </span>
               </div>
               <span class="text-[10px] font-mono text-cyan-300 bg-cyan-950/80 border border-cyan-500/30 px-2 py-0.5 rounded self-start sm:self-auto">
@@ -527,26 +527,25 @@ const severityColour = computed(() => {
               </span>
             </div>
 
-            <!-- Class Selection Tabs -->
+            <!-- Chart Selection Tabs -->
             <div class="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1 select-none">
               <button
                 v-for="ch in 6"
                 :key="ch"
                 type="button"
                 @click="candidateChart = ch"
-                class="p-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center gap-1"
+                class="py-3 px-2.5 rounded-xl border text-center transition-all cursor-pointer flex flex-col items-center justify-center"
                 :class="candidateChart === ch
                   ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-black shadow-md shadow-cyan-500/20'
                   : 'bg-slate-900 text-slate-300 border-slate-800 hover:border-slate-700'"
               >
                 <span class="text-xs font-black">Chart {{ ch }}</span>
-                <span class="text-[9px] uppercase tracking-tight opacity-75 font-mono">Class {{ 7 - ch }}</span>
               </button>
             </div>
 
-            <!-- Class Description Callout -->
+            <!-- Chart Description Callout -->
             <div class="text-[11px] text-cyan-300/90 bg-cyan-950/40 border border-cyan-500/20 p-2.5 rounded-xl leading-relaxed">
-              {{ classDescriptions[candidateChart] }}
+              {{ chartDescriptions[candidateChart] }}
             </div>
           </div>
 
