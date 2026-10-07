@@ -72,18 +72,18 @@ if [[ "$MODE" == "remote" ]]; then
       fi
     fi
 
-    echo "🔄 Stopping existing service on port '"${SERVICE_PORT}"'..."
-    PID=$(lsof -t -i :'"${SERVICE_PORT}"' || true)
-    if [ -n "$PID" ]; then
-      kill -15 "$PID" 2>/dev/null || kill -9 "$PID" 2>/dev/null || true
-      sleep 2
-    fi
-
     echo "🦀 Compiling Rust binary natively on server..."
     cd backend
     cargo build --release
     install -m 755 target/release/fivebx-server ../fivebx-server
     cd ..
+
+    echo "🔄 Fast restart of service on port '"${SERVICE_PORT}"'..."
+    PID=$(lsof -t -i :'"${SERVICE_PORT}"' || true)
+    if [ -n "$PID" ]; then
+      kill -15 "$PID" 2>/dev/null || kill -9 "$PID" 2>/dev/null || true
+      sleep 1
+    fi
 
     echo "🚀 Starting 5bx service on port '"${SERVICE_PORT}"'..."
     nohup ./fivebx-server > fivebx.log 2>&1 &
