@@ -13,7 +13,6 @@ const emit = defineEmits<{
   (e: 'start-timer', mode?: 'stationary' | 'run' | 'walk'): void;
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
-  (e: 'toggle-kiss'): void;
   (e: 'open-assessment'): void;
 }>();
 
@@ -292,33 +291,11 @@ function formatMinutesSeconds(seconds: number) {
       </div>
     </div>
 
-    <!-- Switch to Desktop View Toggle Link -->
-    <div class="text-center pt-2">
-      <button
-        @click="emit('toggle-kiss')"
-        class="text-xs text-slate-400 hover:text-cyan-400 underline transition-colors cursor-pointer"
-      >
-        Switch to Standard Full Cockpit Mode
-      </button>
-    </div>
-
-    <!-- Sticky Bottom Persistent Thumb Bar -->
-    <div class="fixed bottom-0 left-0 right-0 p-3 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800 flex gap-2 z-40 max-w-lg mx-auto">
-      <button
-        @click="emit('start-timer')"
-        class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer"
-      >
-        <span>⏱️</span>
-        <span>Start 11-Min Session</span>
-      </button>
-
-      <button
-        @click="emit('log-manual')"
-        class="py-3 px-4 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
-      >
-        <span>✍️</span>
-        <span>Log</span>
-      </button>
+    <!-- Offline Scorecard Reminder Note -->
+    <div class="text-center pt-2 pb-6">
+      <p class="text-[11px] text-slate-500 font-mono">
+        RCAF 5BX Protocol • 11 Minutes Daily • Auto-calibrated for Mobile & Touch
+      </p>
     </div>
   </div>
 </template>

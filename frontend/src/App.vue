@@ -294,14 +294,26 @@ function navigate(tab: string) {
   }
 }
 
-// KISS Mode State & Methods
-const isKissMode = ref(false);
-const inspectSession = ref<WorkoutSessionHistory | null>(null);
+// Display Layout State & Automatic Responsive Adaptation
+const layoutPreference = ref<'auto' | 'streamlined' | 'comprehensive'>('auto');
+const isMobileViewport = ref(false);
 
-function toggleKissMode() {
-  isKissMode.value = !isKissMode.value;
-  localStorage.setItem('5bx_kiss_mode', isKissMode.value ? 'true' : 'false');
+const isStreamlinedActive = computed(() => {
+  if (layoutPreference.value === 'streamlined') return true;
+  if (layoutPreference.value === 'comprehensive') return false;
+  return isMobileViewport.value;
+});
+
+function updateViewport() {
+  isMobileViewport.value = window.innerWidth < 768;
 }
+
+function handleSetLayoutPreference(pref: 'auto' | 'streamlined' | 'comprehensive') {
+  layoutPreference.value = pref;
+  localStorage.setItem('5bx_layout_preference', pref);
+}
+
+const inspectSession = ref<WorkoutSessionHistory | null>(null);
 
 function handleInspectSession(session: WorkoutSessionHistory) {
   inspectSession.value = session;
@@ -326,12 +338,13 @@ onMounted(() => {
   window.addEventListener('online', () => (isOffline.value = false));
   window.addEventListener('offline', () => (isOffline.value = true));
 
-  // Initialise KISS Mode (check stored preference, default to mobile viewport < 640px)
-  const storedKiss = localStorage.getItem('5bx_kiss_mode');
-  if (storedKiss !== null) {
-    isKissMode.value = storedKiss === 'true';
-  } else {
-    isKissMode.value = window.innerWidth < 640;
+  // Initialise responsive viewport detection & restore stored layout preference
+  updateViewport();
+  window.addEventListener('resize', updateViewport);
+
+  const storedLayout = localStorage.getItem('5bx_layout_preference');
+  if (storedLayout === 'auto' || storedLayout === 'streamlined' || storedLayout === 'comprehensive') {
+    layoutPreference.value = storedLayout;
   }
 
   if ('serviceWorker' in navigator) {
@@ -355,17 +368,19 @@ onMounted(() => {
     <Navbar
       :profile="profile"
       :active-tab="activeTab"
-      :is-kiss-mode="isKissMode"
+      :layout-preference="layoutPreference"
       @navigate="navigate"
       @open-login="handleOpenLoginWithPilot()"
       @open-adjust="showAdjust = true"
       @open-assessment="showAssessment = true"
+      @open-badges="showBadges = true"
+      @open-sheet="activeTab = 'sheet'"
       @logout="handleLogout"
-      @toggle-kiss="toggleKissMode"
+      @set-layout-preference="handleSetLayoutPreference"
     />
 
     <!-- Main Dynamic Content -->
-    <main class="flex-1 pb-16">
+    <main class="flex-1 pb-20 md:pb-12">
       <!-- Public Motivational Landing Page (when logged out and on workout tab) -->
       <LandingHero
         v-if="!profile && activeTab === 'workout'"
@@ -375,9 +390,9 @@ onMounted(() => {
         @open-charts="activeTab = 'charts'"
       />
 
-      <!-- Streamlined KISS Mobile Cockpit (Active when isKissMode is true) -->
+      <!-- Streamlined Focus Card Layout (Active on mobile viewports or by preference) -->
       <MobileCockpit
-        v-else-if="profile && workout && activeTab === 'workout' && isKissMode"
+        v-else-if="profile && workout && activeTab === 'workout' && isStreamlinedActive"
         :workout="workout"
         :profile="profile"
         :highest-badge="highestBadge"
@@ -386,7 +401,6 @@ onMounted(() => {
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-assessment="showAssessment = true"
-        @toggle-kiss="toggleKissMode"
       />
 
       <!-- Authenticated Cockpit: Today's Mission (Full Desktop Mode) -->
