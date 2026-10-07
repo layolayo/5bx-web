@@ -38,10 +38,44 @@ function formatDateTime(iso: string) {
   }
 }
 
-function formatDuration(seconds: number) {
+const LEVEL_NAMES = ['D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+
+function getLevelLabel(level: number): string {
+  if (!level || level < 1 || level > 12) return '';
+  return LEVEL_NAMES[level - 1] || '';
+}
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0:00';
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}m ${s.toString().padStart(2, '0')}s (${seconds}s)`;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function cleanStrengthVerdict(v: string | null | undefined): string {
+  if (!v) return '';
+  const compound = v.match(/Strength\s*\((.+?)\)\s*(?:\||\/)\s*Cardio\s*\((.*)\)\s*$/i);
+  if (compound) {
+    return compound[1].trim();
+  }
+  const manual = v.match(/MANUAL SET:\s*S\((.*?)\)\s*\|\s*C\((.*?)\)/i);
+  if (manual) {
+    return `Manual Set: ${manual[1].trim()}`;
+  }
+  return v.trim();
+}
+
+function cleanCardioVerdict(v: string | null | undefined): string {
+  if (!v) return '';
+  const compound = v.match(/Strength\s*\((.+?)\)\s*(?:\||\/)\s*Cardio\s*\((.*)\)\s*$/i);
+  if (compound) {
+    return compound[2].trim();
+  }
+  const manual = v.match(/MANUAL SET:\s*S\((.*?)\)\s*\|\s*C\((.*?)\)/i);
+  if (manual) {
+    return `Manual Set: ${manual[2].trim()}`;
+  }
+  return v.trim();
 }
 
 async function handleSaveNotes() {
@@ -110,11 +144,11 @@ async function handleDelete() {
       </div>
 
       <!-- Verdict Banner -->
-      <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 mb-6">
-        <div class="flex items-center justify-between mb-3">
-          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">RCAF Official Grading</span>
+      <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 sm:p-5 mb-6 shadow-lg">
+        <div class="flex items-center justify-between mb-3.5">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">RCAF Official Evaluation</span>
           <span
-            class="text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono"
+            class="text-[11px] font-bold px-3 py-0.5 rounded-full uppercase tracking-wider font-mono shadow-sm"
             :class="session.overall_status === 'Promoted' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : (session.overall_status === 'Demoted' ? 'bg-red-500/20 text-red-300 border border-red-500/40' : 'bg-slate-800 text-slate-300 border border-slate-700')"
           >
             {{ session.overall_status }}
@@ -122,15 +156,40 @@ async function handleDelete() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Strength Track (Ex 1–4)</span>
-            <div class="text-sm font-black text-emerald-400 font-mono">{{ session.verdict_strength }}</div>
-            <div class="text-[10px] text-slate-500 mt-1">Starting Position: Chart {{ session.strength_chart }}</div>
+          <!-- Strength Track Card (Emerald Green) -->
+          <div class="bg-slate-900/90 p-3.5 rounded-xl border border-emerald-500/30 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] text-emerald-400 uppercase font-black tracking-wider flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  Strength Track (Ex 1–4)
+                </span>
+                <span class="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                  Baseline: C{{ session.strength_chart }} {{ getLevelLabel(session.strength_level) }}
+                </span>
+              </div>
+              <div class="text-sm font-black text-white font-mono break-words leading-snug mt-1">
+                {{ cleanStrengthVerdict(session.verdict_strength) }}
+              </div>
+            </div>
           </div>
-          <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
-            <span class="text-[10px] text-slate-400 uppercase font-bold block mb-1">Cardio Track (Ex 5)</span>
-            <div class="text-sm font-black text-cyan-400 font-mono">{{ session.verdict_cardio }}</div>
-            <div class="text-[10px] text-slate-500 mt-1">Starting Position: Chart {{ session.cardio_chart }}</div>
+
+          <!-- Cardio Track Card (Cyan) -->
+          <div class="bg-slate-900/90 p-3.5 rounded-xl border border-cyan-500/30 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <span class="text-[10px] text-cyan-400 uppercase font-black tracking-wider flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+                  Cardio Track (Ex 5)
+                </span>
+                <span class="text-[10px] font-mono text-slate-400 bg-slate-950 px-1.5 py-0.5 rounded border border-slate-800">
+                  Baseline: C{{ session.cardio_chart }} {{ getLevelLabel(session.cardio_level) }}
+                </span>
+              </div>
+              <div class="text-sm font-black text-white font-mono break-words leading-snug mt-1">
+                {{ cleanCardioVerdict(session.verdict_cardio) }}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -168,6 +227,9 @@ async function handleDelete() {
           <div class="text-right font-mono">
             <span class="text-base font-black text-white">
               {{ session.cardio_mode === 'stationary' ? session.reps_5 + ' steps' : formatDuration(session.cardio_duration_secs) }}
+            </span>
+            <span v-if="session.cardio_mode !== 'stationary'" class="text-[10px] text-slate-400 block font-sans">
+              Recorded Time (mm:ss)
             </span>
           </div>
         </div>

@@ -18,6 +18,39 @@ function formatDateTime(iso: string) {
     return iso;
   }
 }
+
+function formatDuration(seconds: number): string {
+  if (!seconds || seconds <= 0) return '0:00';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function cleanStrengthVerdict(v: string | null | undefined): string {
+  if (!v) return '';
+  const compound = v.match(/Strength\s*\((.+?)\)\s*(?:\||\/)\s*Cardio\s*\((.*)\)\s*$/i);
+  if (compound) {
+    return compound[1].trim();
+  }
+  const manual = v.match(/MANUAL SET:\s*S\((.*?)\)\s*\|\s*C\((.*?)\)/i);
+  if (manual) {
+    return `Manual Set: ${manual[1].trim()}`;
+  }
+  return v.trim();
+}
+
+function cleanCardioVerdict(v: string | null | undefined): string {
+  if (!v) return '';
+  const compound = v.match(/Strength\s*\((.+?)\)\s*(?:\||\/)\s*Cardio\s*\((.*)\)\s*$/i);
+  if (compound) {
+    return compound[2].trim();
+  }
+  const manual = v.match(/MANUAL SET:\s*S\((.*?)\)\s*\|\s*C\((.*?)\)/i);
+  if (manual) {
+    return `Manual Set: ${manual[2].trim()}`;
+  }
+  return v.trim();
+}
 </script>
 
 <template>
@@ -65,9 +98,9 @@ function formatDateTime(iso: string) {
           </div>
 
           <div class="flex flex-wrap items-center gap-3 text-sm font-bold text-white mb-1">
-            <span class="text-emerald-400">Strength: {{ s.verdict_strength }}</span>
+            <span class="text-emerald-400">Strength: {{ cleanStrengthVerdict(s.verdict_strength) }}</span>
             <span class="text-slate-600">•</span>
-            <span class="text-cyan-400">Cardio: {{ s.verdict_cardio }}</span>
+            <span class="text-cyan-400">Cardio: {{ cleanCardioVerdict(s.verdict_cardio) }}</span>
           </div>
 
           <div class="text-xs text-slate-300 flex flex-wrap gap-x-4 gap-y-1 font-mono mt-2 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
@@ -75,7 +108,7 @@ function formatDateTime(iso: string) {
             <span>Sit-Ups: <strong class="text-white">{{ s.reps_2 }}</strong></span>
             <span>Arches: <strong class="text-white">{{ s.reps_3 }}</strong></span>
             <span>Push-Ups: <strong class="text-white">{{ s.reps_4 }}</strong></span>
-            <span>Cardio: <strong class="text-cyan-300">{{ s.cardio_mode === 'stationary' ? s.reps_5 + ' steps' : s.cardio_duration_secs + 's (' + s.cardio_mode + ')' }}</strong></span>
+            <span>Cardio: <strong class="text-cyan-300">{{ s.cardio_mode === 'stationary' ? s.reps_5 + ' steps' : formatDuration(s.cardio_duration_secs) + ' (' + s.cardio_mode + ')' }}</strong></span>
           </div>
 
           <div v-if="s.notes" class="text-xs italic text-slate-400 mt-2 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800">

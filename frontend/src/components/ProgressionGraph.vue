@@ -108,7 +108,7 @@ const singleExerciseData = computed(() => {
       } else {
         const m = Math.floor(val / 60);
         const sec = val % 60;
-        displayVal = `${m}m ${sec}s (${s.cardio_mode})`;
+        displayVal = `${m}:${sec.toString().padStart(2, '0')} (${s.cardio_mode})`;
       }
     }
 
