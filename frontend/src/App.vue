@@ -362,8 +362,16 @@ onMounted(() => {
   }
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      // Promptly check for updated service worker script on the server
+      registration.update();
+    }).catch((err) => {
       console.log('SW registration skipped:', err);
+    });
+
+    // Auto-reload to immediately activate updated bundle when a new service worker takes over
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
     });
   }
 

@@ -1,9 +1,7 @@
 // 5BX Progressive Web App Service Worker
-const CACHE_NAME = '5bx-cache-v1';
+const CACHE_NAME = '5bx-cache-v2';
 
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/images/c1_ex1.png',
   '/images/c1_ex2.png',
@@ -43,17 +41,35 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Pass API requests directly to network, fallback to cache for static assets
-  if (event.request.url.includes('/api/')) {
+  const url = new URL(event.request.url);
+
+  // Bypass API requests to network directly
+  if (url.pathname.startsWith('/api/')) {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        // Return cached response if available
-        return caches.match(event.request);
-      })
+      fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
 
+  // Network-First for HTML navigation and root index: Always fetch fresh deploy, fall back to cache only when offline
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request) || caches.match('/index.html');
+        })
+    );
+    return;
+  }
+
+  // Stale-While-Revalidate / Cache-First for versioned static assets (images, fonts, hashed assets)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
