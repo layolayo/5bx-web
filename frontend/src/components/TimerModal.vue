@@ -27,8 +27,29 @@ const reps3 = ref(props.workout.exercises[2].target_reps);
 const reps4 = ref(props.workout.exercises[3].target_reps);
 const reps5 = ref(props.workout.exercises[4].target_reps);
 const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
-const cardioDuration = ref(0);
+const cardioMinutes = ref<number | ''>('');
+const cardioSeconds = ref<number | ''>('');
 const notes = ref('');
+
+const currentCardioTarget = computed(() => {
+  const ex5 = props.workout.exercises[4];
+  if (!ex5) return 0;
+  if (cardioMode.value === 'run') return ex5.alt_run_time_seconds;
+  if (cardioMode.value === 'walk') return ex5.alt_walk_time_seconds;
+  return ex5.target_reps;
+});
+
+const totalSecondsEntered = computed(() => {
+  const m = typeof cardioMinutes.value === 'number' ? cardioMinutes.value : 0;
+  const s = typeof cardioSeconds.value === 'number' ? cardioSeconds.value : 0;
+  return m * 60 + s;
+});
+
+function formatDuration(sec: number) {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
 
 const currentExercise = computed(() => props.workout.exercises[currentExerciseIndex.value]);
 
@@ -100,6 +121,7 @@ function finishWorkout() {
 }
 
 function submitResults() {
+  const finalDuration = cardioMode.value === 'stationary' ? 0 : totalSecondsEntered.value;
   emit('submit', {
     reps_1: reps1.value,
     reps_2: reps2.value,
@@ -107,7 +129,7 @@ function submitResults() {
     reps_4: reps4.value,
     reps_5: reps5.value,
     cardio_mode: cardioMode.value,
-    cardio_duration_secs: cardioDuration.value,
+    cardio_duration_secs: finalDuration,
     notes: notes.value,
   });
 }
@@ -253,27 +275,89 @@ onUnmounted(() => {
 
         <!-- Ex 5 Cardio -->
         <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">Ex 5: Cardio Track</label>
-          <div class="flex gap-2 mb-3">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+              Ex 5: Cardio Track Discipline
+            </label>
+            <span class="text-[10px] font-mono text-cyan-400">
+              {{ cardioMode === 'stationary' ? 'Indoor 6-Min' : (cardioMode === 'run' ? '1-Mile Run' : '2-Mile Walk') }}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5 mb-3">
             <button
               v-for="mode in ['stationary', 'run', 'walk']"
               :key="mode"
               type="button"
               @click="cardioMode = mode as any"
-              class="flex-1 py-1.5 px-2 text-xs font-bold rounded-lg uppercase tracking-wider transition-all cursor-pointer"
-              :class="cardioMode === mode ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'bg-slate-900 text-slate-400 hover:text-white'"
+              class="py-2 px-2 text-xs font-bold rounded-xl uppercase tracking-wider transition-all cursor-pointer flex flex-col items-center gap-0.5"
+              :class="cardioMode === mode ? 'bg-cyan-500 text-slate-950 shadow-md font-black' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
             >
-              {{ mode }}
+              <span>{{ mode === 'stationary' ? '👟' : (mode === 'run' ? '🏃' : '🚶') }}</span>
+              <span class="text-[11px]">{{ mode === 'stationary' ? 'Stationary' : (mode === 'run' ? '1-Mile Run' : '2-Mile Walk') }}</span>
             </button>
           </div>
 
-          <div v-if="cardioMode === 'stationary'" class="flex items-center gap-2">
-            <input v-model.number="reps5" type="number" class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
-            <span class="text-xs text-slate-400 shrink-0">steps (Target {{ workout.exercises[4].target_reps }})</span>
+          <!-- Target Banner for Ex 5 -->
+          <div class="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 mb-3 text-xs flex justify-between items-center">
+            <span class="text-slate-400 text-[11px]">Required Standard:</span>
+            <span class="font-mono font-bold text-cyan-300">
+              <template v-if="cardioMode === 'stationary'">
+                {{ workout.exercises[4]?.target_reps }} steps (+ 10 scissor jumps / 75 steps)
+              </template>
+              <template v-else-if="cardioMode === 'run'">
+                Under {{ formatDuration(workout.exercises[4]?.alt_run_time_seconds) }} ({{ workout.exercises[4]?.alt_run_time_seconds }}s)
+              </template>
+              <template v-else>
+                Under {{ formatDuration(workout.exercises[4]?.alt_walk_time_seconds) }} ({{ workout.exercises[4]?.alt_walk_time_seconds }}s)
+              </template>
+            </span>
           </div>
-          <div v-else class="flex items-center gap-2">
-            <input v-model.number="cardioDuration" type="number" placeholder="Seconds" class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
-            <span class="text-xs text-slate-400 shrink-0">Total Seconds Taken</span>
+
+          <!-- Stationary Input -->
+          <div v-if="cardioMode === 'stationary'" class="flex items-center gap-2">
+            <input v-model.number="reps5" type="number" required min="0" class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none" />
+            <span class="text-xs text-slate-400 shrink-0">steps completed</span>
+          </div>
+
+          <!-- Run / Walk Minutes & Seconds Input -->
+          <div v-else class="space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Minutes</label>
+                <input
+                  v-model.number="cardioMinutes"
+                  type="number"
+                  required
+                  min="0"
+                  max="120"
+                  placeholder="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label class="text-[10px] text-slate-400 block mb-1">Seconds</label>
+                <input
+                  v-model.number="cardioSeconds"
+                  type="number"
+                  required
+                  min="0"
+                  max="59"
+                  placeholder="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2.5 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Live Validation Indicator -->
+            <div v-if="totalSecondsEntered > 0" class="text-xs font-mono p-2 rounded-lg" :class="totalSecondsEntered <= currentCardioTarget ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-amber-950/60 text-amber-300 border border-amber-500/30'">
+              <span v-if="totalSecondsEntered <= currentCardioTarget">
+                ✓ Recorded time: {{ totalSecondsEntered }}s — Standard met!
+              </span>
+              <span v-else>
+                ⚠️ Recorded time: {{ totalSecondsEntered }}s — Exceeds {{ currentCardioTarget }}s standard.
+              </span>
+            </div>
           </div>
         </div>
 

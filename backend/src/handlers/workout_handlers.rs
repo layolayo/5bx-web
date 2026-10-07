@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Query, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     Json,
 };
@@ -440,3 +440,144 @@ pub async fn get_all_charts(
         instructions,
     }))
 }
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateSessionNotesRequest {
+    pub notes: String,
+}
+
+pub async fn update_session_notes(
+    auth: AuthUser,
+    Path(id): Path<i32>,
+    State((pool, _)): State<(PgPool, Config)>,
+    Json(payload): Json<UpdateSessionNotesRequest>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let res = sqlx::query(
+        "UPDATE workout_sessions SET notes = $1 WHERE id = $2 AND user_id = $3",
+    )
+    .bind(payload.notes)
+    .bind(id)
+    .bind(auth.user_id)
+    .execute(&pool)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Failed to update notes: {}", e)})),
+        )
+    })?;
+
+    if res.rows_affected() == 0 {
+        return Err((
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Session record not found or unauthorised."})),
+        ));
+    }
+
+    Ok(Json(json!({"status": "success", "message": "Debrief notes updated."})))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct DeleteSessionQuery {
+    pub revert_level: Option<bool>,
+}
+
+pub async fn delete_workout_session(
+    auth: AuthUser,
+    Path(id): Path<i32>,
+    Query(query): Query<DeleteSessionQuery>,
+    State((pool, _)): State<(PgPool, Config)>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let mut tx = pool.begin().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Transaction error: {}", e)})),
+        )
+    })?;
+
+    // Find the session to delete
+    let session = sqlx::query_as::<_, WorkoutSessionRow>(
+        "SELECT * FROM workout_sessions WHERE id = $1 AND user_id = $2",
+    )
+    .bind(id)
+    .bind(auth.user_id)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Database error: {}", e)})),
+        )
+    })?
+    .ok_or_else(|| {
+        (
+            StatusCode::NOT_FOUND,
+            Json(json!({"error": "Workout session record not found."})),
+        )
+    })?;
+
+    // Check if this was the latest session
+    let latest_session_id = sqlx::query_scalar::<_, i32>(
+        "SELECT id FROM workout_sessions WHERE user_id = $1 ORDER BY timestamp DESC, id DESC LIMIT 1",
+    )
+    .bind(auth.user_id)
+    .fetch_optional(&mut *tx)
+    .await
+    .map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Lookup error: {}", e)})),
+        )
+    })?;
+
+    let is_latest = latest_session_id == Some(id);
+    let revert = query.revert_level.unwrap_or(false);
+
+    if is_latest && revert {
+        // Revert user's strength & cardio chart/level to the state prior to this session
+        sqlx::query(
+            "UPDATE users SET strength_chart = $1, strength_level = $2, cardio_chart = $3, cardio_level = $4, updated_at = NOW() WHERE id = $5",
+        )
+        .bind(session.strength_chart)
+        .bind(session.strength_level)
+        .bind(session.cardio_chart)
+        .bind(session.cardio_level)
+        .bind(auth.user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": format!("Failed to revert user levels: {}", e)})),
+            )
+        })?;
+    }
+
+    // Delete the session record
+    sqlx::query("DELETE FROM workout_sessions WHERE id = $1 AND user_id = $2")
+        .bind(id)
+        .bind(auth.user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({"error": format!("Failed to delete session: {}", e)})),
+            )
+        })?;
+
+    tx.commit().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({"error": format!("Commit error: {}", e)})),
+        )
+    })?;
+
+    Ok(Json(json!({
+        "status": "success",
+        "message": "Workout session record removed.",
+        "was_latest": is_latest,
+        "reverted": is_latest && revert
+    })))
+}
+

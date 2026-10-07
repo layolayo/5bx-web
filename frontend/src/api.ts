@@ -142,3 +142,27 @@ export async function fetchSystemCharts(): Promise<import('./types').SystemChart
     return cached ? JSON.parse(cached) : { charts: [], instructions: [] };
   }
 }
+
+export async function updateSessionNotes(id: number, notes: string): Promise<void> {
+  const res = await fetch(`${BASE_URL}/workout/history/${id}/notes`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ notes }),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to update debrief notes');
+  }
+}
+
+export async function deleteSession(id: number, revertLevel: boolean): Promise<{ was_latest: boolean; reverted: boolean }> {
+  const res = await fetch(`${BASE_URL}/workout/history/${id}?revert_level=${revertLevel}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || 'Failed to remove session');
+  }
+  return await res.json();
+}
+

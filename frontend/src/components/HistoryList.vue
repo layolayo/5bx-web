@@ -6,6 +6,10 @@ defineProps<{
   history: WorkoutSessionHistory[];
 }>();
 
+const emit = defineEmits<{
+  (e: 'inspect', session: WorkoutSessionHistory): void;
+}>();
+
 function formatDateTime(iso: string) {
   try {
     const d = new Date(iso);
@@ -46,7 +50,8 @@ function formatDateTime(iso: string) {
       <div
         v-for="s in history"
         :key="s.id"
-        class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all"
+        class="glass-panel glass-panel-hover rounded-2xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all cursor-pointer group"
+        @click="emit('inspect', s)"
       >
         <div class="flex-1">
           <div class="flex items-center gap-2 mb-2">
@@ -70,7 +75,7 @@ function formatDateTime(iso: string) {
             <span>Sit-Ups: <strong class="text-white">{{ s.reps_2 }}</strong></span>
             <span>Arches: <strong class="text-white">{{ s.reps_3 }}</strong></span>
             <span>Push-Ups: <strong class="text-white">{{ s.reps_4 }}</strong></span>
-            <span>Cardio: <strong class="text-cyan-300">{{ s.cardio_mode === 'stationary' ? s.reps_5 + ' steps' : s.cardio_duration_secs + 's' }}</strong></span>
+            <span>Cardio: <strong class="text-cyan-300">{{ s.cardio_mode === 'stationary' ? s.reps_5 + ' steps' : s.cardio_duration_secs + 's (' + s.cardio_mode + ')' }}</strong></span>
           </div>
 
           <div v-if="s.notes" class="text-xs italic text-slate-400 mt-2 bg-slate-950/40 px-3 py-1.5 rounded-lg border border-slate-800">
@@ -78,13 +83,24 @@ function formatDateTime(iso: string) {
           </div>
         </div>
 
-        <div class="text-right shrink-0 bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs min-w-[120px]">
-          <div class="font-black text-sm text-cyan-400 font-mono">
-            C{{ s.strength_chart }} / C{{ s.cardio_chart }}
+        <div class="flex items-center gap-3 self-stretch md:self-center justify-between md:justify-end shrink-0">
+          <div class="text-right bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs min-w-[110px]">
+            <div class="font-black text-sm text-cyan-400 font-mono">
+              C{{ s.strength_chart }} / C{{ s.cardio_chart }}
+            </div>
+            <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">
+              Chart Position
+            </div>
           </div>
-          <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">
-            Chart Position
-          </div>
+
+          <button
+            type="button"
+            class="px-3.5 py-3 rounded-xl bg-slate-900 group-hover:bg-cyan-500/20 border border-slate-800 group-hover:border-cyan-500/40 text-slate-400 group-hover:text-cyan-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+            title="Inspect Flight Debrief"
+          >
+            <span>🔍</span>
+            <span class="hidden sm:inline">Inspect & Manage</span>
+          </button>
         </div>
       </div>
     </div>

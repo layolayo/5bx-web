@@ -11,6 +11,8 @@ import TimerModal from './components/TimerModal.vue';
 import ManualLogModal from './components/ManualLogModal.vue';
 import LoginModal from './components/LoginModal.vue';
 import LevelAdjustModal from './components/LevelAdjustModal.vue';
+import MobileCockpit from './components/MobileCockpit.vue';
+import SessionDetailModal from './components/SessionDetailModal.vue';
 import {
   UserProfile,
   TodayWorkout,
@@ -237,9 +239,45 @@ function navigate(tab: string) {
   }
 }
 
+// KISS Mode State & Methods
+const isKissMode = ref(false);
+const inspectSession = ref<WorkoutSessionHistory | null>(null);
+
+function toggleKissMode() {
+  isKissMode.value = !isKissMode.value;
+  localStorage.setItem('5bx_kiss_mode', isKissMode.value ? 'true' : 'false');
+}
+
+function handleInspectSession(session: WorkoutSessionHistory) {
+  inspectSession.value = session;
+}
+
+async function handleSessionUpdated() {
+  history.value = await fetchHistory();
+  if (inspectSession.value) {
+    const updated = history.value.find(s => s.id === inspectSession.value!.id);
+    if (updated) inspectSession.value = updated;
+  }
+}
+
+async function handleSessionDeleted() {
+  inspectSession.value = null;
+  history.value = await fetchHistory();
+  profile.value = await fetchMe();
+  workout.value = await fetchTodayWorkout();
+}
+
 onMounted(() => {
   window.addEventListener('online', () => (isOffline.value = false));
   window.addEventListener('offline', () => (isOffline.value = true));
+
+  // Initialise KISS Mode (check stored preference, default to mobile viewport < 640px)
+  const storedKiss = localStorage.getItem('5bx_kiss_mode');
+  if (storedKiss !== null) {
+    isKissMode.value = storedKiss === 'true';
+  } else {
+    isKissMode.value = window.innerWidth < 640;
+  }
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
@@ -262,10 +300,12 @@ onMounted(() => {
     <Navbar
       :profile="profile"
       :active-tab="activeTab"
+      :is-kiss-mode="isKissMode"
       @navigate="navigate"
       @open-login="handleOpenLoginWithPilot()"
       @open-adjust="showAdjust = true"
       @logout="handleLogout"
+      @toggle-kiss="toggleKissMode"
     />
 
     <!-- Main Dynamic Content -->
@@ -279,9 +319,21 @@ onMounted(() => {
         @open-charts="activeTab = 'charts'"
       />
 
-      <!-- Authenticated Cockpit: Today's Mission -->
+      <!-- Streamlined KISS Mobile Cockpit (Active when isKissMode is true) -->
+      <MobileCockpit
+        v-else-if="profile && workout && activeTab === 'workout' && isKissMode"
+        :workout="workout"
+        :profile="profile"
+        :highest-badge="highestBadge"
+        @start-timer="showTimer = true; isGuestSession = false"
+        @open-sheet="activeTab = 'sheet'"
+        @log-manual="showManualLog = true; isGuestSession = false"
+        @toggle-kiss="toggleKissMode"
+      />
+
+      <!-- Authenticated Cockpit: Today's Mission (Full Desktop Mode) -->
       <TodayWorkoutView
-        v-if="profile && workout && activeTab === 'workout'"
+        v-else-if="profile && workout && activeTab === 'workout'"
         :workout="workout"
         :profile="profile"
         :highest-badge="highestBadge"
@@ -310,6 +362,7 @@ onMounted(() => {
       <HistoryList
         v-if="profile && activeTab === 'history'"
         :history="history"
+        @inspect="handleInspectSession"
       />
     </main>
 
@@ -397,5 +450,15 @@ onMounted(() => {
         </button>
       </div>
     </div>
+
+    <!-- Flight Debrief & Record Management Modal -->
+    <SessionDetailModal
+      v-if="inspectSession"
+      :session="inspectSession"
+      :is-latest="history.length > 0 && inspectSession.id === history[0].id"
+      @close="inspectSession = null"
+      @updated="handleSessionUpdated"
+      @deleted="handleSessionDeleted"
+    />
   </div>
 </template>

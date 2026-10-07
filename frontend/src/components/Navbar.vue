@@ -4,6 +4,7 @@ import { UserProfile } from '../types';
 defineProps<{
   profile: UserProfile | null;
   activeTab: string;
+  isKissMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -11,6 +12,7 @@ const emit = defineEmits<{
   (e: 'open-login'): void;
   (e: 'open-adjust'): void;
   (e: 'logout'): void;
+  (e: 'toggle-kiss'): void;
 }>();
 </script>
 
@@ -83,9 +85,20 @@ const emit = defineEmits<{
       </nav>
 
       <!-- User Account Cockpit Actions -->
-      <div class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2">
+        <!-- KISS Mode Toggle Button -->
+        <button
+          @click="emit('toggle-kiss')"
+          :title="isKissMode ? 'Switch to Full Cockpit Mode' : 'Switch to Streamlined KISS Mobile Cockpit'"
+          class="px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          :class="isKissMode ? 'bg-cyan-500/20 border-cyan-500/50 text-cyan-300' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'"
+        >
+          <span>📱</span>
+          <span class="hidden sm:inline">{{ isKissMode ? 'KISS Mode' : 'KISS Layout' }}</span>
+        </button>
+
         <!-- Logged In Pilot Profile Card -->
-        <div v-if="profile" class="flex items-center gap-3">
+        <div v-if="profile" class="flex items-center gap-2.5">
           <div class="text-right hidden sm:block">
             <div class="text-xs font-black text-white flex items-center gap-1.5 justify-end">
               <span class="text-emerald-400 text-[10px]">●</span>
