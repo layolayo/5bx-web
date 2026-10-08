@@ -14,6 +14,7 @@ const emit = defineEmits<{
   (e: 'open-sheet'): void;
   (e: 'log-manual'): void;
   (e: 'open-assessment'): void;
+  (e: 'open-manual'): void;
 }>();
 
 const expandedExercise = ref<number | null>(null);
@@ -53,6 +54,56 @@ function formatMinutesSeconds(seconds: number) {
   const s = seconds % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
+
+const activeCardioName = computed(() => {
+  if (cardioChoice.value === 'run') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    return `${dist}-Mile Continuous Run (${km} km)`;
+  }
+  if (cardioChoice.value === 'walk') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    return `${dist}-Mile Continuous Walk (${km} km)`;
+  }
+  return cardioExercise.value?.name || 'Stationary Run';
+});
+
+const activeCardioDurationLabel = computed(() => {
+  if (cardioChoice.value === 'run') {
+    return `Target ≤ ${formatMinutesSeconds(cardioExercise.value?.alt_run_time_seconds || 0)}`;
+  }
+  if (cardioChoice.value === 'walk') {
+    return `Target ≤ ${formatMinutesSeconds(cardioExercise.value?.alt_walk_time_seconds || 0)}`;
+  }
+  return '6 Minutes';
+});
+
+const activeCardioImagePath = computed(() => {
+  if (cardioChoice.value === 'run') return 'run.png';
+  if (cardioChoice.value === 'walk') return 'walk.png';
+  return cardioExercise.value?.image_path || 'c1_ex5.png';
+});
+
+const activeCardioInstructions = computed(() => {
+  if (cardioChoice.value === 'run') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    const speed = treadmillSpeed.value.kph > 0
+      ? `On a treadmill, set speed to at least ${treadmillSpeed.value.kph.toFixed(1)} km/h (${treadmillSpeed.value.mph.toFixed(1)} mph) without holding handrails.`
+      : '';
+    return `Continuous outdoor or gymnasium roadwork covering ${dist} mi (${km} km) in under ${formatMinutesSeconds(cardioExercise.value?.alt_run_time_seconds || 0)}. Maintain a steady aerobic stride. ${speed}`;
+  }
+  if (cardioChoice.value === 'walk') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    const speed = treadmillSpeed.value.kph > 0
+      ? `On a treadmill, maintain at least ${treadmillSpeed.value.kph.toFixed(1)} km/h (${treadmillSpeed.value.mph.toFixed(1)} mph).`
+      : '';
+    return `Vigorous continuous power walking covering ${dist} mi (${km} km) in under ${formatMinutesSeconds(cardioExercise.value?.alt_walk_time_seconds || 0)}. Walk briskly with arms swinging freely. ${speed}`;
+  }
+  return cardioExercise.value?.instructions || '';
+});
 </script>
 
 <template>
@@ -110,30 +161,38 @@ function formatMinutesSeconds(seconds: number) {
       <span>START 11-MINUTES</span>
     </button>
 
-    <!-- Secondary Quick Actions (3-Button Layout) -->
-    <div class="grid grid-cols-3 gap-2">
+    <!-- Secondary Quick Actions (4-Button Grid) -->
+    <div class="grid grid-cols-4 gap-1.5">
       <button
         @click="emit('log-manual')"
-        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+        class="py-2 px-1 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
       >
-        <span class="text-base">✍️</span>
+        <span class="text-base leading-none">✍️</span>
         <span>Quick Log</span>
       </button>
 
       <button
         @click="emit('open-sheet')"
-        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+        class="py-2 px-1 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-200 text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
       >
-        <span class="text-base">📄</span>
+        <span class="text-base leading-none">📄</span>
         <span>Gym Sheet</span>
       </button>
 
       <button
         @click="emit('open-assessment')"
-        class="py-2.5 px-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-cyan-300 text-[11px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+        class="py-2 px-1 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-cyan-300 text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
       >
-        <span class="text-base">🧭</span>
-        <span>Assess Rung</span>
+        <span class="text-base leading-none">🧭</span>
+        <span>Assess</span>
+      </button>
+
+      <button
+        @click="emit('open-manual')"
+        class="py-2 px-1 rounded-xl bg-slate-900 border border-cyan-500/40 hover:bg-slate-800 text-cyan-300 text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-colors cursor-pointer"
+      >
+        <span class="text-base leading-none">📖</span>
+        <span>Manual</span>
       </button>
     </div>
 
@@ -214,8 +273,8 @@ function formatMinutesSeconds(seconds: number) {
                 5
               </div>
               <div>
-                <div class="text-sm font-bold text-white">{{ cardioExercise.name }}</div>
-                <div class="text-[10px] text-slate-400 font-mono">6 Minutes</div>
+                <div class="text-sm font-bold text-white">{{ activeCardioName }}</div>
+                <div class="text-[10px] text-slate-400 font-mono">{{ activeCardioDurationLabel }}</div>
               </div>
             </div>
 
@@ -281,10 +340,10 @@ function formatMinutesSeconds(seconds: number) {
           <!-- Collapsible Technique Diagram & Cue -->
           <div v-if="expandedExercise === 5" class="mt-3 pt-3 border-t border-slate-800 space-y-2">
             <div class="w-full h-32 bg-white rounded-xl p-2 flex items-center justify-center border border-slate-300">
-              <img :src="'/images/' + cardioExercise.image_path" :alt="cardioExercise.name" class="max-h-full max-w-full object-contain" />
+              <img :src="'/images/' + activeCardioImagePath" :alt="activeCardioName" class="max-h-full max-w-full object-contain" />
             </div>
             <p class="text-xs text-slate-300 leading-relaxed bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-              {{ cardioExercise.instructions }}
+              {{ activeCardioInstructions }}
             </p>
           </div>
         </div>

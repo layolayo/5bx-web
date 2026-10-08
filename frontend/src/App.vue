@@ -411,6 +411,7 @@ onMounted(() => {
         @open-login="handleOpenLoginWithPilot"
         @start-guest-workout="startGuestWorkout"
         @open-charts="activeTab = 'charts'"
+        @open-manual="activeTab = 'manual'"
       />
 
       <!-- Streamlined Focus Card Layout (Active on mobile viewports or by preference) -->
@@ -424,6 +425,7 @@ onMounted(() => {
         @open-sheet="activeTab = 'sheet'"
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-assessment="showAssessment = true"
+        @open-manual="activeTab = 'manual'"
       />
 
       <!-- Authenticated Cockpit: Today's Mission (Full Desktop Mode) -->
@@ -438,6 +440,7 @@ onMounted(() => {
         @log-manual="showManualLog = true; isGuestSession = false"
         @open-badges="showBadges = true"
         @open-assessment="showAssessment = true"
+        @open-manual="activeTab = 'manual'"
       />
 
       <!-- System Charts Browser (Charts 1-6, all 72 rungs) -->

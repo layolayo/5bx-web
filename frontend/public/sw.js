@@ -1,8 +1,10 @@
 // 5BX Progressive Web App Service Worker
-const CACHE_NAME = '5bx-cache-v2';
+const CACHE_NAME = '5bx-cache-v3';
 
 const STATIC_ASSETS = [
   '/manifest.json',
+  '/images/run.png',
+  '/images/walk.png',
   '/images/c1_ex1.png',
   '/images/c1_ex2.png',
   '/images/c1_ex3.png',

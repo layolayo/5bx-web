@@ -51,6 +51,14 @@ function cleanCardioVerdict(v: string | null | undefined): string {
   }
   return v.trim();
 }
+
+function getLevelName(level: number): string {
+  const names = ['D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+  if (level >= 1 && level <= 12) {
+    return names[level - 1];
+  }
+  return `L${level}`;
+}
 </script>
 
 <template>
@@ -117,12 +125,17 @@ function cleanCardioVerdict(v: string | null | undefined): string {
         </div>
 
         <div class="flex items-center gap-3 self-stretch md:self-center justify-between md:justify-end shrink-0">
-          <div class="text-right bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs min-w-[110px]">
-            <div class="font-black text-sm text-cyan-400 font-mono">
-              C{{ s.strength_chart }} / C{{ s.cardio_chart }}
+          <div class="text-right bg-slate-950 p-2.5 sm:p-3 rounded-xl border border-slate-800 text-xs shrink-0">
+            <div class="flex items-center justify-end gap-1.5 font-mono font-bold text-xs sm:text-sm">
+              <span class="text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-lg" title="Starting Strength Rung">
+                S: C{{ s.strength_chart }} {{ getLevelName(s.strength_level) }}
+              </span>
+              <span class="text-cyan-400 bg-cyan-950/70 border border-cyan-500/30 px-2 py-0.5 rounded-lg" title="Starting Cardio Rung">
+                C: C{{ s.cardio_chart }} {{ getLevelName(s.cardio_level) }}
+              </span>
             </div>
-            <div class="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">
-              Chart Position
+            <div class="text-[9px] text-slate-500 uppercase tracking-wider mt-1 text-right">
+              Sortie Baseline
             </div>
           </div>
 

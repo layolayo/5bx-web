@@ -5,6 +5,7 @@ const emit = defineEmits<{
   (e: 'open-login'): void;
   (e: 'start-guest-workout'): void;
   (e: 'open-charts'): void;
+  (e: 'open-manual'): void;
 }>();
 
 // Interactive Age Standards Explorer Data
@@ -205,6 +206,14 @@ const exercises = [
         >
           <span>📊</span>
           <span>System Charts (1–6)</span>
+        </button>
+
+        <button
+          @click="emit('open-manual')"
+          class="btn-control-secondary bg-slate-900/90 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300"
+        >
+          <span>📖</span>
+          <span>RCAF Flight Manual</span>
         </button>
       </div>
     </section>

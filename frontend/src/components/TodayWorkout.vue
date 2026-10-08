@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (e: 'log-manual'): void;
   (e: 'open-badges'): void;
   (e: 'open-assessment'): void;
+  (e: 'open-manual'): void;
 }>();
 
 const cardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
@@ -49,6 +50,56 @@ function formatMinutesSeconds(seconds: number) {
   const s = seconds % 60;
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
+
+const activeCardioName = computed(() => {
+  if (cardioChoice.value === 'run') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    return `${dist}-Mile Continuous Run (${km} km)`;
+  }
+  if (cardioChoice.value === 'walk') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    return `${dist}-Mile Continuous Walk (${km} km)`;
+  }
+  return cardioExercise.value?.name || 'Stationary Run';
+});
+
+const activeCardioDurationLabel = computed(() => {
+  if (cardioChoice.value === 'run') {
+    return `Target ≤ ${formatMinutesSeconds(cardioExercise.value?.alt_run_time_seconds || 0)}`;
+  }
+  if (cardioChoice.value === 'walk') {
+    return `Target ≤ ${formatMinutesSeconds(cardioExercise.value?.alt_walk_time_seconds || 0)}`;
+  }
+  return '6 Minutes';
+});
+
+const activeCardioImagePath = computed(() => {
+  if (cardioChoice.value === 'run') return 'run.png';
+  if (cardioChoice.value === 'walk') return 'walk.png';
+  return cardioExercise.value?.image_path || 'c1_ex5.png';
+});
+
+const activeCardioInstructions = computed(() => {
+  if (cardioChoice.value === 'run') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    const speed = treadmillSpeed.value.kph > 0
+      ? `On a treadmill, set speed to at least ${treadmillSpeed.value.kph.toFixed(1)} km/h (${treadmillSpeed.value.mph.toFixed(1)} mph) without holding handrails.`
+      : '';
+    return `Continuous outdoor or gymnasium roadwork covering ${dist} mi (${km} km) in under ${formatMinutesSeconds(cardioExercise.value?.alt_run_time_seconds || 0)}. Maintain a steady aerobic stride and consistent breathing cadence. ${speed}`;
+  }
+  if (cardioChoice.value === 'walk') {
+    const dist = cardioDistanceMiles.value;
+    const km = (dist * 1.60934).toFixed(1);
+    const speed = treadmillSpeed.value.kph > 0
+      ? `On a treadmill, maintain at least ${treadmillSpeed.value.kph.toFixed(1)} km/h (${treadmillSpeed.value.mph.toFixed(1)} mph).`
+      : '';
+    return `Vigorous continuous power walking covering ${dist} mi (${km} km) in under ${formatMinutesSeconds(cardioExercise.value?.alt_walk_time_seconds || 0)}. Walk briskly with arms swinging freely. ${speed}`;
+  }
+  return cardioExercise.value?.instructions || '';
+});
 
 const levelNames = ['D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
 function getLevelName(lvl: number): string {
@@ -214,6 +265,15 @@ const muscleFocusMap: Record<number, string> = {
           <span>🧭</span>
           <span>Assess Level</span>
         </button>
+
+        <!-- RCAF Flight Manual Doctrine -->
+        <button
+          @click="emit('open-manual')"
+          class="btn-control-tertiary bg-slate-900 hover:bg-slate-800 border border-cyan-500/40 text-cyan-300 hover:text-white"
+        >
+          <span>📖</span>
+          <span>Flight Manual</span>
+        </button>
       </div>
     </div>
 
@@ -326,21 +386,21 @@ const muscleFocusMap: Record<number, string> = {
               </div>
 
               <div class="w-36 h-24 bg-white rounded-xl p-2 flex items-center justify-center shrink-0 shadow-inner border border-slate-300">
-                <img :src="'/images/' + cardioExercise.image_path" :alt="cardioExercise.name" class="max-h-full max-w-full object-contain" />
+                <img :src="'/images/' + activeCardioImagePath" :alt="activeCardioName" class="max-h-full max-w-full object-contain" />
               </div>
 
               <div class="md:hidden flex-1">
-                <h4 class="text-base font-bold text-white">{{ cardioExercise.name }}</h4>
-                <div class="text-[10px] font-mono text-cyan-400">6 Minutes</div>
+                <h4 class="text-base font-bold text-white">{{ activeCardioName }}</h4>
+                <div class="text-[10px] font-mono text-cyan-400">{{ activeCardioDurationLabel }}</div>
               </div>
             </div>
 
             <!-- Middle: Description & Discipline Selector -->
             <div class="flex-1 w-full">
               <div class="hidden md:flex items-center gap-2.5 mb-1">
-                <h4 class="text-lg font-black text-white">{{ cardioExercise.name }}</h4>
+                <h4 class="text-lg font-black text-white">{{ activeCardioName }}</h4>
                 <span class="text-[11px] font-mono font-bold text-cyan-300 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-500/20">
-                  6 Minutes
+                  {{ activeCardioDurationLabel }}
                 </span>
               </div>
 
@@ -349,7 +409,7 @@ const muscleFocusMap: Record<number, string> = {
               </div>
 
               <p class="text-xs text-slate-300 leading-relaxed max-w-2xl">
-                {{ cardioExercise.instructions }}
+                {{ activeCardioInstructions }}
               </p>
 
               <!-- Interactive Cardio Discipline Switcher -->
