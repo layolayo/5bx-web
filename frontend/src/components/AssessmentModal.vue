@@ -426,7 +426,7 @@ const severityColour = computed(() => {
       </div>
 
       <!-- Modal Body -->
-      <div class="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1">
+      <div class="p-5 sm:p-6 pr-4 sm:pr-6 overflow-y-auto space-y-6 flex-1">
         <!-- Error alert -->
         <div v-if="errorMessage" class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
           {{ errorMessage }}

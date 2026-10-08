@@ -12,6 +12,12 @@
   --cockpit-amber: #f59e0b;
 }
 
+html {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #070a12;
+}
+
 body {
   background-color: var(--cockpit-bg);
   color: #f8fafc;
@@ -118,23 +124,46 @@ body {
   white-space: nowrap;
 }
 
-/* Custom Scrollbar for sleek cockpit feel */
+/* Modern standard scrollbar gutter reservation and cockpit styling */
+.overflow-y-auto,
+.overflow-auto,
+[class*="overflow-y-auto"],
+[class*="overflow-auto"] {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0b0f19;
+}
+
+.overflow-x-auto,
+[class*="overflow-x-auto"] {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0b0f19;
+}
+
+/* Custom WebKit scrollbar with external track channel separation */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #070a12;
+  background: #0b0f19;
+  border-radius: 9999px;
+  margin: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e293b;
-  border-radius: 4px;
+  background: #253349;
+  border-radius: 9999px;
+  border: 2px solid #0b0f19;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #3b82f6;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* -------------------------------------------------------------------------

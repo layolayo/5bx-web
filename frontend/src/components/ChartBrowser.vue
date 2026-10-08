@@ -193,7 +193,7 @@ function showExercise(exNum: number) {
 
     <!-- The 12-Rung Matrix Table with Grouped Strength & Cardio Headers -->
     <div class="glass-panel rounded-2xl overflow-hidden shadow-2xl border border-slate-800">
-      <div class="overflow-x-auto">
+      <div class="overflow-x-auto pb-3">
         <table class="w-full text-left text-xs tabular-nums border-collapse">
           <thead>
             <!-- Group Tier Header -->
