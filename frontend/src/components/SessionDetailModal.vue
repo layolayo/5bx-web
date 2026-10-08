@@ -17,7 +17,6 @@ const emit = defineEmits<{
 const editNotes = ref(props.session.notes || '');
 const isSavingNotes = ref(false);
 const notesSaveSuccess = ref(false);
-const revertLevel = ref(false);
 const isDeleting = ref(false);
 const showDeleteConfirm = ref(false);
 const errorMessage = ref('');
@@ -26,7 +25,6 @@ watch(
   () => props.session,
   (s) => {
     editNotes.value = s.notes || '';
-    revertLevel.value = false;
     showDeleteConfirm.value = false;
     errorMessage.value = '';
     notesSaveSuccess.value = false;
@@ -131,7 +129,7 @@ async function handleDelete() {
   isDeleting.value = true;
   errorMessage.value = '';
   try {
-    await deleteSession(props.session.id, props.isLatest && revertLevel.value);
+    await deleteSession(props.session.id, props.isLatest);
     emit('deleted');
     emit('close');
   } catch (err: any) {
@@ -316,21 +314,17 @@ async function handleDelete() {
             If this workout was logged erroneously, you can remove it from your flight log.
           </p>
 
-          <!-- Level Reversion Checkbox for Latest Session -->
-          <div v-if="isLatest" class="mb-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-            <label class="flex items-start gap-2.5 cursor-pointer select-none">
-              <input
-                v-model="revertLevel"
-                type="checkbox"
-                class="mt-0.5 rounded border-slate-700 text-cyan-500 focus:ring-0 cursor-pointer"
-              />
-              <div class="text-xs">
-                <span class="font-bold text-white block">Revert pilot rung level to pre-workout state</span>
-                <span class="text-[11px] text-slate-400 leading-tight block mt-0.5">
-                  Reverts your active chart and level back to Chart {{ session.strength_chart }} (Strength) and Chart {{ session.cardio_chart }} (Cardio), undoing any promotions or demotions earned in this mission.
-                </span>
-              </div>
-            </label>
+          <!-- Auto-Reversion Notice for Latest Session -->
+          <div v-if="isLatest" class="mb-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800 flex items-start gap-2.5 text-xs">
+            <span class="text-cyan-400 mt-0.5 text-sm">🔄</span>
+            <div>
+              <span class="font-bold text-white block">Automatic Pilot Rung Reversion</span>
+              <span class="text-[11px] text-slate-400 leading-tight block mt-0.5">
+                Removing this mission will automatically restore your active ladder to its pre-workout state: 
+                <span class="text-emerald-400 font-mono">Strength Chart {{ session.strength_chart }} • Level {{ session.strength_level }}</span>, 
+                <span class="text-cyan-400 font-mono">Cardio Chart {{ session.cardio_chart }} • Level {{ session.cardio_level }}</span>.
+              </span>
+            </div>
           </div>
 
           <!-- Confirm or Trigger Button -->

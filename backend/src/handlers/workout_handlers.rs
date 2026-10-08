@@ -534,7 +534,7 @@ pub async fn delete_workout_session(
     })?;
 
     let is_latest = latest_session_id == Some(id);
-    let revert = query.revert_level.unwrap_or(false);
+    let revert = query.revert_level.unwrap_or(true);
 
     if is_latest && revert {
         // Revert user's strength & cardio chart/level to the state prior to this session

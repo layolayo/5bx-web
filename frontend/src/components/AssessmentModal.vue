@@ -516,36 +516,7 @@ const failedStrengthExercises = computed(() => {
   return exerciseQualifications.value.filter((e) => e.track === 'Strength' && !e.passed);
 });
 
-async function handleKeepActiveRung() {
-  if (!placementResult.value) return;
-  try {
-    isApplying.value = true;
-    errorMessage.value = '';
-    const durationSecs = cardioMode.value === 'stationary' ? 0 : (Number(cardioMin.value) || 0) * 60 + (Number(cardioSec.value) || 0);
-    await applyAssessment({
-      strength_chart: props.currentStrengthChart || placementResult.value.strength_chart,
-      strength_level: props.currentStrengthLevel || placementResult.value.strength_level,
-      cardio_chart: props.currentCardioChart || placementResult.value.cardio_chart,
-      cardio_level: props.currentCardioLevel || placementResult.value.cardio_level,
-      assessment_type: 'diagnostic_placement',
-      notes: `Diagnostic Benchmark session logged on Chart ${candidateChart.value}. Active ladder retained (Strength ${props.currentStrengthDisplay}, Cardio ${props.currentCardioDisplay}) under 3-strikes grace doctrine.`,
-      candidate_chart: candidateChart.value,
-      reps_1: Number(ex1Reps.value) || 0,
-      reps_2: Number(ex2Reps.value) || 0,
-      reps_3: Number(ex3Reps.value) || 0,
-      reps_4: Number(ex4Reps.value) || 0,
-      reps_5: cardioMode.value === 'stationary' ? Number(cardioReps.value) || 0 : 0,
-      cardio_mode: cardioMode.value,
-      cardio_duration_secs: durationSecs,
-    });
-    emit('applied');
-    emit('close');
-  } catch (e: any) {
-    errorMessage.value = e.message || 'Failed to log assessment session.';
-  } finally {
-    isApplying.value = false;
-  }
-}
+
 
 async function handleAcceptSafeReentry() {
   if (!props.layoffStatus) return;
@@ -1282,49 +1253,15 @@ const severityColour = computed(() => {
             </p>
           </div>
 
-          <!-- 6. GRACE DOCTRINE ADVISORY (If demotion detected for enrolled pilot) -->
-          <div v-if="isDemotedOverall" class="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-2">
-            <div class="flex items-center gap-2 text-cyan-300 font-bold text-xs uppercase tracking-wider">
-              <span>💡</span> The 3-Strikes Grace Doctrine
-            </div>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              In daily sorties, you are protected by the <strong>3-Strikes Rule</strong>: you remain on your active flight ladder unless you fail targets 3 missions in a row. A diagnostic benchmark tests snapshot capacity on a single attempt.
-            </p>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              You can choose to <strong>Keep Active Rung</strong>: this records your actual repetitions and diagnostic telemetry to your Flight Log while retaining your active flight position on Chart {{ props.currentStrengthChart }}.
-            </p>
-          </div>
-
           <!-- Actions -->
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
-            <template v-if="isDemotedOverall">
-              <button
-                @click="handleKeepActiveRung"
-                :disabled="isApplying"
-                class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>🛡️</span>
-                <span>{{ isApplying ? 'Logging Telemetry...' : `Log Telemetry & Keep Chart ${props.currentStrengthChart}` }}</span>
-              </button>
-
-              <button
-                @click="handleApplyBenchmark"
-                :disabled="isApplying || !placementResult"
-                class="py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <span>📉</span>
-                <span>Accept Re-calibration</span>
-              </button>
-            </template>
-
             <button
-              v-else
               @click="handleApplyBenchmark"
               :disabled="isApplying || !placementResult"
-              class="flex-1 py-3 px-5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+              class="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
             >
-              <span>⚡</span>
-              <span>{{ isApplying ? 'Calibrating Ladder...' : 'Apply Calibrated Starting Level' }}</span>
+              <span>🎖️</span>
+              <span>{{ isApplying ? 'Calibrating Ladder...' : (isDemotedOverall ? 'Accept Calibration & Adjust Rung' : 'Accept Placement & Enrol') }}</span>
             </button>
 
             <button

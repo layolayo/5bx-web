@@ -531,13 +531,16 @@ const exerciseGuides: Record<number, ExerciseGuideDetail> = {
         <!-- Diagnostic Benchmark Difference -->
         <div class="p-4 rounded-xl bg-amber-950/20 border border-amber-500/30 space-y-2">
           <div class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-            <span>🧭</span> Why Diagnostic Re-Assessment Differs from Daily Missions
+            <span>🧭</span> Why Diagnostic Calibration Differs from Daily Missions
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            When you enter the <strong>Diagnostic Placement Assessment</strong> ("Test Current Fitness"), you are sitting a comprehensive placement exam against an entire target chart. Because this test is used to calibrate an entry ladder, it requires all 4 strength exercises to clear the entry standard simultaneously. If an enrolled pilot sits the test and misses one exercise, the system provides an action button to <strong>Log Telemetry & Keep Active Chart</strong> under the 3-strikes grace doctrine, rather than forcing an instant demotion.
+            The <strong>3-Strikes Rule</strong> protects your position strictly during daily workout sorties. In contrast, the <strong>Diagnostic Placement Assessment</strong> ("Test Current Fitness") is an objective calibration benchmark against an entire target chart. Because each chart introduces more demanding movements, all 4 strength exercises must clear the entry target simultaneously.
+          </p>
+          <p class="text-xs text-slate-300 leading-relaxed">
+            If you miss any target during a diagnostic assessment (such as following a training layoff), the system honestly calibrates you to the summit of the preceding chart (<strong>Chart X - 1, Level 12 A+</strong>). This honest demotion ensures you build back tendon, joint, and cardiovascular conditioning safely before re-attempting advanced movements.
           </p>
           <p class="text-xs text-slate-400 leading-relaxed">
-            <em>Note:</em> This diagnostic grace option is distinct from the <strong>Revert pilot rung level</strong> safety checkbox found in the Flight Log when deleting an erroneous mission entry.
+            <em>Flight Log Note:</em> Deleting an erroneous mission from your flight debrief automatically restores your pilot rung level to its pre-workout state without requiring manual intervention.
           </p>
         </div>
       </div>
