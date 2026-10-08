@@ -50,6 +50,11 @@ function formatMinutesSeconds(seconds: number) {
   return s > 0 ? `${m}m ${s}s` : `${m}m`;
 }
 
+const levelNames = ['D-', 'D', 'D+', 'C-', 'C', 'C+', 'B-', 'B', 'B+', 'A-', 'A', 'A+'];
+function getLevelName(lvl: number): string {
+  return levelNames[lvl - 1] || 'D-';
+}
+
 const muscleFocusMap: Record<number, string> = {
   1: 'Spine Decompression, Hamstrings & Lumbar Mobility',
   2: 'Abdominals, Hip Flexors & Core Fortification',
@@ -85,25 +90,43 @@ const muscleFocusMap: Record<number, string> = {
         </div>
 
         <!-- Split Ladder Cockpit Meters -->
-        <div class="flex flex-wrap sm:flex-nowrap gap-3">
+        <div class="flex flex-wrap sm:flex-nowrap gap-3 shrink-0">
           <!-- Strength Gauge -->
-          <div class="flex-1 min-w-[150px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Strength Track (Ex 1–4)</span>
-              <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <div class="flex-1 min-w-[140px] sm:min-w-[155px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">Strength Track</span>
+                <span class="w-2 h-2 rounded-full bg-emerald-400 shrink-0"></span>
+              </div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Chart {{ workout.strength_chart }}
+              </div>
+              <div class="text-2xl font-black text-emerald-400 tracking-tight leading-tight">
+                Level {{ profile?.strength_level_display || getLevelName(workout.strength_level) }}
+              </div>
             </div>
-            <div class="text-xl font-black text-emerald-400">{{ workout.strength_display }}</div>
-            <div class="text-[10px] text-slate-500 font-mono mt-0.5">Golden Rule Active</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-2 pt-2 border-t border-slate-800/80 whitespace-nowrap">
+              Golden Rule Active
+            </div>
           </div>
 
           <!-- Cardio Gauge -->
-          <div class="flex-1 min-w-[150px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between">
-            <div class="flex items-center justify-between mb-1">
-              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cardio Track (Ex 5)</span>
-              <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <div class="flex-1 min-w-[140px] sm:min-w-[155px] bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-1.5">
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 whitespace-nowrap">Cardio Track</span>
+                <span class="w-2 h-2 rounded-full bg-cyan-400 shrink-0"></span>
+              </div>
+              <div class="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Chart {{ workout.cardio_chart }}
+              </div>
+              <div class="text-2xl font-black text-cyan-400 tracking-tight leading-tight">
+                Level {{ profile?.cardio_level_display || getLevelName(workout.cardio_level) }}
+              </div>
             </div>
-            <div class="text-xl font-black text-cyan-400">{{ workout.cardio_display }}</div>
-            <div class="text-[10px] text-slate-500 font-mono mt-0.5">Stationary / Stride Target</div>
+            <div class="text-[10px] text-slate-500 font-mono mt-2 pt-2 border-t border-slate-800/80 whitespace-nowrap">
+              Golden Rule Active
+            </div>
           </div>
         </div>
       </div>
