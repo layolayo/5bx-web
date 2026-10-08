@@ -223,7 +223,7 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
             <div class="h-8 mt-1 border-b border-gray-300"></div>
           </div>
           <p class="text-[9px] text-gray-600 mt-1 italic">
-            Running Machine / Treadmill calibration: Maintain the calibrated speed shown above (or higher) to ensure completion within the official RCAF time ceiling. Roadwork walking is prescribed in whole-minute tiers (Charts 1–4) and running transitions to individual seconds in Charts 5 & 6.
+            Running Machine / Treadmill calibration: Maintain the calibrated speed shown above (or higher) to ensure completion within the official RCAF time ceiling. Roadwork ceilings are anchored to RCAF D- and A+ bounds with linear per-rung progression across all 12 rungs.
           </p>
         </div>
         <div class="border border-gray-400 p-2 rounded">

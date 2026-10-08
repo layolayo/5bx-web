@@ -303,18 +303,18 @@ function showExercise(exNum: number) {
       </div>
     </div>
 
-    <!-- Historical RCAF Roadwork Calibration Note -->
+    <!-- RCAF Roadwork Calibration Note -->
     <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 text-xs text-slate-300 space-y-2">
       <div class="flex items-center gap-2 font-bold text-cyan-300">
         <span>⏱️</span>
-        <span class="uppercase tracking-wider text-[11px]">RCAF Doctrine: Aerobic Substitution Calibration</span>
+        <span class="uppercase tracking-wider text-[11px]">RCAF Doctrine: Aerobic Roadwork Progression</span>
       </div>
       <p class="text-slate-400 leading-relaxed">
         <template v-if="selectedChart <= 4">
-          In <strong>Charts 1 to 4</strong>, the official RCAF standard calibrates continuous walking roadwork in <strong>whole-minute targets</strong> (17 to 35 minutes) and running roadwork into <strong>quarter- and half-minute brackets</strong> across letter tiers (D, C, B, A).
+          Roadwork targets are anchored to the official RCAF <strong>D- (entry)</strong> and <strong>A+ (graduation)</strong> boundary limits, with linear per-rung progression across all 12 levels for continuous running and walking. Every promotion rewards the pilot with a distinct, achievable pace improvement.
         </template>
         <template v-else>
-          In <strong>Charts 5 and 6</strong> (Flying Crew & elite standards), the RCAF discontinued walking roadwork and calibrated 1-mile running ceilings into <strong>discrete second-by-second benchmarks</strong> for every individual rung down to 5:00.
+          In <strong>Charts 5 and 6</strong> (Flying Crew & elite standards), walking roadwork is discontinued and 1-mile running ceilings progress in discrete second-by-second benchmarks down to 5:00.
         </template>
       </p>
     </div>
