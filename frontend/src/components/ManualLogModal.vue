@@ -56,6 +56,29 @@ const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
 const cardioTimeString = ref('');
 const notes = ref('');
 
+function getLocalDateTimeString(date: Date = new Date()): string {
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const y = date.getFullYear();
+  const m = pad(date.getMonth() + 1);
+  const d = pad(date.getDate());
+  const h = pad(date.getHours());
+  const min = pad(date.getMinutes());
+  return `${y}-${m}-${d}T${h}:${min}`;
+}
+
+const completedAtLocal = ref(getLocalDateTimeString());
+
+function setToCurrentTime() {
+  completedAtLocal.value = getLocalDateTimeString();
+}
+
+const isHistoricalDate = computed(() => {
+  if (!completedAtLocal.value) return false;
+  const chosen = new Date(completedAtLocal.value).getTime();
+  const now = Date.now();
+  return (now - chosen) > 30 * 60 * 1000;
+});
+
 const currentCardioTarget = computed(() => {
   const ex5 = props.workout.exercises[4];
   if (!ex5) return 0;
@@ -129,6 +152,7 @@ function formatDuration(sec: number) {
 
 function submitLog() {
   const finalDuration = cardioMode.value === 'stationary' ? 0 : totalSecondsEntered.value;
+  const isoCompletedAt = completedAtLocal.value ? new Date(completedAtLocal.value).toISOString() : undefined;
   emit('submit', {
     reps_1: reps1.value,
     reps_2: reps2.value,
@@ -138,6 +162,7 @@ function submitLog() {
     cardio_mode: cardioMode.value,
     cardio_duration_secs: finalDuration,
     notes: notes.value,
+    completed_at: isoCompletedAt,
   });
 }
 </script>
@@ -167,15 +192,37 @@ function submitLog() {
         </button>
       </div>
 
-      <!-- Current Target Standards Banner -->
-      <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between mb-5 text-xs">
-        <div>
-          <span class="text-[10px] text-slate-400 uppercase font-bold block">Assigned Mission Targets</span>
-          <span class="text-white font-bold">{{ workout.strength_display }} / {{ workout.cardio_display }}</span>
+      <!-- Sortie Date & Time Configuration -->
+      <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 mb-5 text-xs">
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+            <span>📅</span>
+            <span>Sortie Date & Time</span>
+          </label>
+          <button
+            type="button"
+            @click="setToCurrentTime"
+            class="text-[10px] font-mono font-bold text-emerald-400 hover:text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 hover:border-emerald-400/50 px-2.5 py-1 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+            title="Reset to current moment"
+          >
+            <span>⏱️</span>
+            <span>Now</span>
+          </button>
         </div>
-        <span class="text-emerald-400 font-mono text-[11px] bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-1 rounded-full">
-          Date: {{ workout.date }}
-        </span>
+        <div class="relative">
+          <input
+            v-model="completedAtLocal"
+            type="datetime-local"
+            class="w-full bg-slate-900 text-cyan-300 font-mono text-sm px-3.5 py-2.5 rounded-xl border border-slate-700 focus:border-cyan-500 focus:outline-none [color-scheme:dark]"
+          />
+        </div>
+        <div class="flex items-center justify-between mt-2 pt-1.5 border-t border-slate-900 text-[10px]">
+          <span class="text-slate-400">Assigned Standards: <strong class="text-slate-200">{{ workout.strength_display }} / {{ workout.cardio_display }}</strong></span>
+          <span v-if="isHistoricalDate" class="text-amber-400 font-mono font-semibold flex items-center gap-1">
+            <span>⚠️</span> Backdated Sortie
+          </span>
+          <span v-else class="text-emerald-400/80 font-mono">Present Sortie</span>
+        </div>
       </div>
 
       <form @submit.prevent="submitLog" class="space-y-4">

@@ -148,6 +148,8 @@ pub struct SubmitWorkoutRequest {
     pub cardio_mode: String, // "stationary", "run", "walk"
     pub cardio_duration_secs: Option<i32>,
     pub notes: Option<String>,
+    #[serde(default)]
+    pub completed_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

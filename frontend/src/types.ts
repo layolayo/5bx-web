@@ -52,6 +52,7 @@ export interface SubmitWorkoutPayload {
   cardio_mode: string;
   cardio_duration_secs?: number;
   notes?: string;
+  completed_at?: string;
 }
 
 export interface NewlyAwardedBadge {

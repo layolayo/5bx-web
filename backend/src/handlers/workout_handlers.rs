@@ -284,16 +284,19 @@ pub async fn submit_workout(
         )
     })?;
 
+    let session_timestamp = payload.completed_at.unwrap_or_else(Utc::now);
+
     // Record session into workout_sessions
     let session_id = sqlx::query_scalar::<_, i32>(
         r#"
         INSERT INTO workout_sessions 
-        (user_id, strength_chart, strength_level, cardio_chart, cardio_level, reps_1, reps_2, reps_3, reps_4, reps_5, cardio_mode, cardio_duration_secs, verdict_strength, verdict_cardio, overall_status, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+        (user_id, timestamp, strength_chart, strength_level, cardio_chart, cardio_level, reps_1, reps_2, reps_3, reps_4, reps_5, cardio_mode, cardio_duration_secs, verdict_strength, verdict_cardio, overall_status, notes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
         RETURNING id
         "#,
     )
     .bind(user.id)
+    .bind(session_timestamp)
     .bind(user.strength_chart)
     .bind(user.strength_level)
     .bind(user.cardio_chart)
