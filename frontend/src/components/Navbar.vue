@@ -42,28 +42,35 @@ const isMenuOpen = ref(false);
         </div>
       </div>
 
-      <!-- Desktop Primary Navigation Tabs (Strictly 3 clean destinations) -->
+      <!-- Desktop Primary Navigation Tabs -->
       <nav v-if="profile" class="hidden md:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
         <button
           @click="emit('navigate', 'workout')"
-          class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'workout' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Daily Mission
         </button>
         <button
           @click="emit('navigate', 'charts')"
-          class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'charts' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           System Charts
         </button>
         <button
           @click="emit('navigate', 'history')"
-          class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
           :class="activeTab === 'history' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
         >
           Flight Log
+        </button>
+        <button
+          @click="emit('navigate', 'manual')"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          :class="activeTab === 'manual' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'"
+        >
+          Flight Manual
         </button>
       </nav>
 
@@ -71,6 +78,9 @@ const isMenuOpen = ref(false);
       <nav v-else class="hidden md:flex items-center gap-4 text-xs font-semibold text-slate-300">
         <button @click="emit('navigate', 'charts')" class="hover:text-cyan-400 transition-colors cursor-pointer">
           System Charts (1–6)
+        </button>
+        <button @click="emit('navigate', 'manual')" class="hover:text-cyan-400 transition-colors cursor-pointer">
+          Flight Manual
         </button>
       </nav>
 
@@ -161,6 +171,17 @@ const isMenuOpen = ref(false);
                 <div>
                   <div class="font-bold text-xs">Manual Ladder Override</div>
                   <div class="text-[10px] text-slate-400">Manually adjust strength or cardio levels</div>
+                </div>
+              </button>
+
+              <button
+                @click="emit('navigate', 'manual'); isMenuOpen = false"
+                class="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 hover:text-white flex items-center gap-3 transition-colors cursor-pointer"
+              >
+                <span class="text-base">📖</span>
+                <div>
+                  <div class="font-bold text-xs">RCAF Flight Manual</div>
+                  <div class="text-[10px] text-slate-400">1961 Doctrine, technique, and rules</div>
                 </div>
               </button>
 
@@ -259,30 +280,38 @@ const isMenuOpen = ref(false);
     <!-- Mobile Bottom Navigation Bar (Visible strictly on small screens < 768px when authenticated) -->
     <nav
       v-if="profile"
-      class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800/80 px-4 py-2 flex items-center justify-around select-none"
+      class="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-950/95 backdrop-blur-lg border-t border-slate-800/80 px-2 py-1 flex items-center justify-around select-none"
     >
       <button
         @click="emit('navigate', 'workout')"
-        class="flex flex-col items-center gap-1 text-[11px] font-bold py-1 px-4 rounded-xl transition-colors cursor-pointer"
+        class="flex flex-col items-center gap-0.5 text-[10px] font-bold py-1 px-3 rounded-xl transition-colors cursor-pointer"
         :class="activeTab === 'workout' ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'"
       >
-        <span class="text-base">🎯</span>
+        <span class="text-base leading-none">🎯</span>
         <span>Mission</span>
       </button>
       <button
         @click="emit('navigate', 'charts')"
-        class="flex flex-col items-center gap-1 text-[11px] font-bold py-1 px-4 rounded-xl transition-colors cursor-pointer"
+        class="flex flex-col items-center gap-0.5 text-[10px] font-bold py-1 px-3 rounded-xl transition-colors cursor-pointer"
         :class="activeTab === 'charts' ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'"
       >
-        <span class="text-base">📊</span>
+        <span class="text-base leading-none">📊</span>
         <span>Charts</span>
       </button>
       <button
+        @click="emit('navigate', 'manual')"
+        class="flex flex-col items-center gap-0.5 text-[10px] font-bold py-1 px-3 rounded-xl transition-colors cursor-pointer"
+        :class="activeTab === 'manual' ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'"
+      >
+        <span class="text-base leading-none">📖</span>
+        <span>Manual</span>
+      </button>
+      <button
         @click="emit('navigate', 'history')"
-        class="flex flex-col items-center gap-1 text-[11px] font-bold py-1 px-4 rounded-xl transition-colors cursor-pointer"
+        class="flex flex-col items-center gap-0.5 text-[10px] font-bold py-1 px-3 rounded-xl transition-colors cursor-pointer"
         :class="activeTab === 'history' ? 'text-cyan-400' : 'text-slate-400 hover:text-slate-200'"
       >
-        <span class="text-base">📜</span>
+        <span class="text-base leading-none">📜</span>
         <span>Flight Log</span>
       </button>
     </nav>

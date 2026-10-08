@@ -15,6 +15,7 @@ import MobileCockpit from './components/MobileCockpit.vue';
 import SessionDetailModal from './components/SessionDetailModal.vue';
 import AssessmentModal from './components/AssessmentModal.vue';
 import AccountSettingsModal from './components/AccountSettingsModal.vue';
+import FlightManual from './components/FlightManual.vue';
 import {
   UserProfile,
   TodayWorkout,
@@ -459,6 +460,13 @@ onMounted(() => {
         v-if="profile && activeTab === 'history'"
         :history="history"
         @inspect="handleInspectSession"
+      />
+
+      <!-- RCAF Flight Manual (Historical Doctrine, Illustrated Technique, Progression Rules & PDF Archive) -->
+      <FlightManual
+        v-if="activeTab === 'manual'"
+        :profile="profile"
+        @close="activeTab = 'workout'"
       />
     </main>
 

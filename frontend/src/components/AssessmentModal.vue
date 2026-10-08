@@ -406,6 +406,147 @@ function formatMmSs(totalSeconds: number): string {
 }
 
 // Handlers for applying assessment rungs
+const isStrengthDemoted = computed(() => {
+  if (!placementResult.value || !props.currentStrengthChart || props.currentStrengthChart === 0) return false;
+  const currentTotal = (props.currentStrengthChart - 1) * 12 + props.currentStrengthLevel;
+  const assessedTotal = (placementResult.value.strength_chart - 1) * 12 + placementResult.value.strength_level;
+  return assessedTotal < currentTotal;
+});
+
+const isCardioDemoted = computed(() => {
+  if (!placementResult.value || !props.currentCardioChart || props.currentCardioChart === 0) return false;
+  const currentTotal = (props.currentCardioChart - 1) * 12 + props.currentCardioLevel;
+  const assessedTotal = (placementResult.value.cardio_chart - 1) * 12 + placementResult.value.cardio_level;
+  return assessedTotal < currentTotal;
+});
+
+const isDemotedOverall = computed(() => isStrengthDemoted.value || isCardioDemoted.value);
+
+interface QualificationItem {
+  num: number;
+  name: string;
+  achievedDisplay: string;
+  targetDisplay: string;
+  passed: boolean;
+  track: 'Strength' | 'Cardio';
+  deficitMessage?: string;
+}
+
+const exerciseQualifications = computed<QualificationItem[]>(() => {
+  const row = candidateCardioEntryRow.value;
+  if (!row) return [];
+
+  const durationSecs = cardioMode.value === 'stationary' ? 0 : (Number(cardioMin.value) || 0) * 60 + (Number(cardioSec.value) || 0);
+
+  const ex1Pass = Number(ex1Reps.value) >= row.ex1;
+  const ex2Pass = Number(ex2Reps.value) >= row.ex2;
+  const ex3Pass = Number(ex3Reps.value) >= row.ex3;
+  const ex4Pass = Number(ex4Reps.value) >= row.ex4;
+
+  let ex5Pass = false;
+  let ex5Target = '';
+  let ex5Achieved = '';
+
+  if (cardioMode.value === 'stationary') {
+    ex5Pass = Number(cardioReps.value) >= row.ex5;
+    ex5Target = `${row.ex5} steps`;
+    ex5Achieved = `${cardioReps.value} steps`;
+  } else if (cardioMode.value === 'run') {
+    ex5Pass = durationSecs > 0 && durationSecs <= row.ex5_run;
+    ex5Target = `≤ ${formatDurationMmSs(row.ex5_run)}`;
+    ex5Achieved = formatDurationMmSs(durationSecs);
+  } else {
+    ex5Pass = durationSecs > 0 && durationSecs <= row.ex5_walk;
+    ex5Target = `≤ ${formatDurationMmSs(row.ex5_walk)}`;
+    ex5Achieved = formatDurationMmSs(durationSecs);
+  }
+
+  const items: QualificationItem[] = [
+    {
+      num: 1,
+      name: 'Forward Bends',
+      achievedDisplay: `${ex1Reps.value} reps`,
+      targetDisplay: `${row.ex1} reps`,
+      passed: ex1Pass,
+      track: 'Strength',
+      deficitMessage: ex1Pass ? undefined : `Needed ${row.ex1} reps for Chart ${candidateChart.value} entry`,
+    },
+    {
+      num: 2,
+      name: 'Sit-Ups',
+      achievedDisplay: `${ex2Reps.value} reps`,
+      targetDisplay: `${row.ex2} reps`,
+      passed: ex2Pass,
+      track: 'Strength',
+      deficitMessage: ex2Pass ? undefined : `Needed ${row.ex2} reps for Chart ${candidateChart.value} entry`,
+    },
+    {
+      num: 3,
+      name: 'Back Arches',
+      achievedDisplay: `${ex3Reps.value} reps`,
+      targetDisplay: `${row.ex3} reps`,
+      passed: ex3Pass,
+      track: 'Strength',
+      deficitMessage: ex3Pass ? undefined : `Needed ${row.ex3} reps for Chart ${candidateChart.value} entry`,
+    },
+    {
+      num: 4,
+      name: 'Push-Ups',
+      achievedDisplay: `${ex4Reps.value} reps`,
+      targetDisplay: `${row.ex4} reps`,
+      passed: ex4Pass,
+      track: 'Strength',
+      deficitMessage: ex4Pass ? undefined : `Needed ${row.ex4} reps for Chart ${candidateChart.value} entry`,
+    },
+    {
+      num: 5,
+      name: cardioMode.value === 'stationary' ? 'Stationary Run' : (cardioMode.value === 'run' ? 'Continuous Run' : 'Continuous Walk'),
+      achievedDisplay: ex5Achieved,
+      targetDisplay: ex5Target,
+      passed: ex5Pass,
+      track: 'Cardio',
+      deficitMessage: ex5Pass ? undefined : `Missed Chart ${candidateChart.value} aerobic standard`,
+    },
+  ];
+
+  return items;
+});
+
+const failedStrengthExercises = computed(() => {
+  return exerciseQualifications.value.filter((e) => e.track === 'Strength' && !e.passed);
+});
+
+async function handleKeepActiveRung() {
+  if (!placementResult.value) return;
+  try {
+    isApplying.value = true;
+    errorMessage.value = '';
+    const durationSecs = cardioMode.value === 'stationary' ? 0 : (Number(cardioMin.value) || 0) * 60 + (Number(cardioSec.value) || 0);
+    await applyAssessment({
+      strength_chart: props.currentStrengthChart || placementResult.value.strength_chart,
+      strength_level: props.currentStrengthLevel || placementResult.value.strength_level,
+      cardio_chart: props.currentCardioChart || placementResult.value.cardio_chart,
+      cardio_level: props.currentCardioLevel || placementResult.value.cardio_level,
+      assessment_type: 'diagnostic_placement',
+      notes: `Diagnostic Benchmark session logged on Chart ${candidateChart.value}. Active ladder retained (Strength ${props.currentStrengthDisplay}, Cardio ${props.currentCardioDisplay}) under 3-strikes grace doctrine.`,
+      candidate_chart: candidateChart.value,
+      reps_1: Number(ex1Reps.value) || 0,
+      reps_2: Number(ex2Reps.value) || 0,
+      reps_3: Number(ex3Reps.value) || 0,
+      reps_4: Number(ex4Reps.value) || 0,
+      reps_5: cardioMode.value === 'stationary' ? Number(cardioReps.value) || 0 : 0,
+      cardio_mode: cardioMode.value,
+      cardio_duration_secs: durationSecs,
+    });
+    emit('applied');
+    emit('close');
+  } catch (e: any) {
+    errorMessage.value = e.message || 'Failed to log assessment session.';
+  } finally {
+    isApplying.value = false;
+  }
+}
+
 async function handleAcceptSafeReentry() {
   if (!props.layoffStatus) return;
   try {
@@ -1060,7 +1201,65 @@ const severityColour = computed(() => {
             </div>
           </div>
 
-          <!-- 4. PLACEMENT OUTCOME PREVIEW -->
+          <!-- 4. EXERCISE QUALIFICATION BREAKDOWN -->
+          <div v-if="candidateCardioEntryRow" class="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3 shadow-lg">
+            <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span>📋 Candidate Chart {{ candidateChart }} Entry Qualification</span>
+              <span class="text-[10px] font-mono text-slate-500">Benchmark Standard: Level 1 (D-)</span>
+            </div>
+
+            <div class="space-y-1.5 font-mono text-xs">
+              <div
+                v-for="item in exerciseQualifications"
+                :key="item.num"
+                class="p-2.5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 transition-colors"
+                :class="item.passed ? 'bg-slate-900/60 border-emerald-500/30' : 'bg-rose-950/20 border-rose-500/40'"
+              >
+                <div class="flex items-center gap-2">
+                  <span
+                    class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+                    :class="item.passed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'"
+                  >
+                    {{ item.passed ? '✓' : '✕' }}
+                  </span>
+                  <span class="font-sans font-bold text-slate-200">
+                    {{ item.num }}. {{ item.name }}
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-sans">
+                    ({{ item.track }})
+                  </span>
+                </div>
+
+                <div class="flex items-center gap-3 text-[11px] sm:text-right">
+                  <div>
+                    <span class="text-slate-400">Achieved:</span>
+                    <strong :class="item.passed ? 'text-emerald-300' : 'text-rose-300'" class="ml-1">{{ item.achievedDisplay }}</strong>
+                  </div>
+                  <div class="text-slate-500">|</div>
+                  <div>
+                    <span class="text-slate-400">Required:</span>
+                    <span class="text-slate-200 ml-1">{{ item.targetDisplay }}</span>
+                  </div>
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-sans font-bold tracking-tight uppercase"
+                    :class="item.passed ? 'bg-emerald-950 text-emerald-400 border border-emerald-500/30' : 'bg-rose-950 text-rose-300 border border-rose-500/40'"
+                  >
+                    {{ item.passed ? 'Qualified' : 'Below Target' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottleneck explanation if any strength exercise missed -->
+            <div v-if="failedStrengthExercises.length > 0 && placementResult" class="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 text-[11px] text-amber-200 font-sans leading-relaxed">
+              <span class="font-bold text-amber-300">⚠️ Strength Track Gatekeeper:</span>
+              To place into Chart {{ candidateChart }}, you must satisfy entry thresholds across all 4 strength exercises simultaneously.
+              Because {{ failedStrengthExercises.map(e => e.name).join(', ') }} missed the entry standard, strength capacity is calibrated at
+              <strong>Chart {{ placementResult.strength_chart }} • {{ placementResult.strength_display }}</strong>.
+            </div>
+          </div>
+
+          <!-- 5. PLACEMENT OUTCOME PREVIEW -->
           <div v-if="placementResult" class="p-4 rounded-2xl bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 space-y-3 shadow-lg">
             <div class="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
               <span>🎯 Calibrated Placement Preview</span>
@@ -1083,9 +1282,43 @@ const severityColour = computed(() => {
             </p>
           </div>
 
+          <!-- 6. GRACE DOCTRINE ADVISORY (If demotion detected for enrolled pilot) -->
+          <div v-if="isDemotedOverall" class="p-4 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 space-y-2">
+            <div class="flex items-center gap-2 text-cyan-300 font-bold text-xs uppercase tracking-wider">
+              <span>💡</span> The 3-Strikes Grace Doctrine
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              In daily sorties, you are protected by the <strong>3-Strikes Rule</strong>: you remain on your active flight ladder unless you fail targets 3 missions in a row. A diagnostic benchmark tests snapshot capacity on a single attempt.
+            </p>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              You can choose to <strong>Keep Active Rung</strong>: this records your actual repetitions and diagnostic telemetry to your Flight Log while retaining your active flight position on Chart {{ props.currentStrengthChart }}.
+            </p>
+          </div>
+
           <!-- Actions -->
           <div class="pt-2 flex flex-col sm:flex-row gap-3">
+            <template v-if="isDemotedOverall">
+              <button
+                @click="handleKeepActiveRung"
+                :disabled="isApplying"
+                class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 disabled:opacity-50 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>🛡️</span>
+                <span>{{ isApplying ? 'Logging Telemetry...' : `Log Telemetry & Keep Chart ${props.currentStrengthChart}` }}</span>
+              </button>
+
+              <button
+                @click="handleApplyBenchmark"
+                :disabled="isApplying || !placementResult"
+                class="py-3 px-4 rounded-2xl bg-slate-900 hover:bg-slate-850 border border-amber-500/40 hover:border-amber-400 text-amber-300 font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span>📉</span>
+                <span>Accept Re-calibration</span>
+              </button>
+            </template>
+
             <button
+              v-else
               @click="handleApplyBenchmark"
               :disabled="isApplying || !placementResult"
               class="flex-1 py-3 px-5 rounded-2xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
