@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { UserProfile, ExerciseChartRow, ExerciseInstructionRow } from '../types';
 import { fetchSystemCharts } from '../api';
+import { calculateTreadmillSpeed } from '../telemetry';
 
 const props = defineProps<{
   profile: UserProfile | null;
@@ -60,6 +61,20 @@ function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function getRunSpeed(seconds: number): string {
+  if (!seconds || seconds <= 0) return '';
+  const dist = selectedChart.value === 1 ? 0.5 : 1.0;
+  const speed = calculateTreadmillSpeed(dist, seconds);
+  return `≥ ${speed.kph.toFixed(1)} km/h (${speed.mph.toFixed(1)} mph)`;
+}
+
+function getWalkSpeed(seconds: number): string {
+  if (!seconds || seconds <= 0) return '';
+  const dist = selectedChart.value === 1 ? 1.0 : 2.0;
+  const speed = calculateTreadmillSpeed(dist, seconds);
+  return `≥ ${speed.kph.toFixed(1)} km/h (${speed.mph.toFixed(1)} mph)`;
 }
 
 function isCurrentStrength(level: number): boolean {
@@ -270,12 +285,38 @@ function showExercise(exNum: number) {
                 {{ row.ex5 }}
                 <span v-if="selectedChart >= 5" class="text-[10px] text-slate-400 font-sans">+ jumps</span>
               </td>
-              <td class="py-3 px-3 text-cyan-400/90 font-mono">{{ formatDuration(row.ex5_run) }}</td>
-              <td class="py-3 px-3 text-cyan-400/90 font-mono">{{ formatDuration(row.ex5_walk) }}</td>
+              <td class="py-3 px-3 text-cyan-400/90 font-mono" :title="row.ex5_run > 0 ? 'Treadmill Speed: ' + getRunSpeed(row.ex5_run) : ''">
+                <div>{{ formatDuration(row.ex5_run) }}</div>
+                <div v-if="row.ex5_run > 0" class="text-[9px] font-sans text-slate-500 hidden sm:block">
+                  {{ getRunSpeed(row.ex5_run) }}
+                </div>
+              </td>
+              <td class="py-3 px-3 text-cyan-400/90 font-mono" :title="row.ex5_walk > 0 ? 'Treadmill Speed: ' + getWalkSpeed(row.ex5_walk) : ''">
+                <div>{{ formatDuration(row.ex5_walk) }}</div>
+                <div v-if="row.ex5_walk > 0" class="text-[9px] font-sans text-slate-500 hidden sm:block">
+                  {{ getWalkSpeed(row.ex5_walk) }}
+                </div>
+              </td>
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Historical RCAF Roadwork Calibration Note -->
+    <div class="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 sm:p-5 text-xs text-slate-300 space-y-2">
+      <div class="flex items-center gap-2 font-bold text-cyan-300">
+        <span>⏱️</span>
+        <span class="uppercase tracking-wider text-[11px]">RCAF Doctrine: Aerobic Substitution Calibration</span>
+      </div>
+      <p class="text-slate-400 leading-relaxed">
+        <template v-if="selectedChart <= 4">
+          In <strong>Charts 1 to 4</strong>, the official RCAF standard calibrates continuous walking roadwork in <strong>whole-minute targets</strong> (17 to 35 minutes) and running roadwork into <strong>quarter- and half-minute brackets</strong> across letter tiers (D, C, B, A).
+        </template>
+        <template v-else>
+          In <strong>Charts 5 and 6</strong> (Flying Crew & elite standards), the RCAF discontinued walking roadwork and calibrated 1-mile running ceilings into <strong>discrete second-by-second benchmarks</strong> for every individual rung down to 5:00.
+        </template>
+      </p>
     </div>
 
     <!-- Exercise Posture / Technique Modal Drawer with Contextual Theming -->

@@ -199,13 +199,13 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
                 </div>
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />
-                  <span class="font-medium text-gray-800 w-20 text-[9px] leading-tight">Run ({{ runDistanceMiles }}m/{{ (runDistanceMiles * 1.60934).toFixed(1) }}k):</span>
+                  <span class="font-medium text-gray-800 w-24 text-[9px] leading-tight">Run ({{ runDistanceMiles }} mi / {{ (runDistanceMiles * 1.60934).toFixed(1) }} km):</span>
                   <div class="border-b-2 border-dashed border-gray-500 w-14 h-5 text-center text-xs"></div>
                   <span class="text-[9px] text-gray-500">mm:ss</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />
-                  <span class="font-medium text-gray-800 w-20 text-[9px] leading-tight">Walk ({{ walkDistanceMiles }}m/{{ (walkDistanceMiles * 1.60934).toFixed(1) }}k):</span>
+                  <span class="font-medium text-gray-800 w-24 text-[9px] leading-tight">Walk ({{ walkDistanceMiles }} mi / {{ (walkDistanceMiles * 1.60934).toFixed(1) }} km):</span>
                   <div class="border-b-2 border-dashed border-gray-500 w-14 h-5 text-center text-xs"></div>
                   <span class="text-[9px] text-gray-500">mm:ss</span>
                 </div>
@@ -223,7 +223,7 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
             <div class="h-8 mt-1 border-b border-gray-300"></div>
           </div>
           <p class="text-[9px] text-gray-600 mt-1 italic">
-            Running Machine / Treadmill calibration: Maintain the calibrated speed shown above (or higher) to ensure completion within the official RCAF time ceiling.
+            Running Machine / Treadmill calibration: Maintain the calibrated speed shown above (or higher) to ensure completion within the official RCAF time ceiling. Roadwork walking is prescribed in whole-minute tiers (Charts 1–4) and running transitions to individual seconds in Charts 5 & 6.
           </p>
         </div>
         <div class="border border-gray-400 p-2 rounded">
