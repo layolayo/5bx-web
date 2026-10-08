@@ -467,6 +467,7 @@ onMounted(() => {
     <TimerModal
       v-if="showTimer && (workout || guestWorkoutTemplate)"
       :workout="workout || guestWorkoutTemplate"
+      :history="history"
       :is-guest="isGuestSession"
       :initial-cardio-mode="activeCardioChoice"
       @close="showTimer = false"
@@ -477,6 +478,7 @@ onMounted(() => {
     <ManualLogModal
       v-if="showManualLog && (workout || guestWorkoutTemplate)"
       :workout="workout || guestWorkoutTemplate"
+      :history="history"
       @close="showManualLog = false"
       @submit="handleSubmitWorkout"
     />
@@ -562,6 +564,7 @@ onMounted(() => {
     <AssessmentModal
       v-if="showAssessment && profile"
       :show="showAssessment"
+      :history="history"
       :layoff-status="layoffStatus"
       :current-strength-chart="profile.strength_chart"
       :current-strength-level="profile.strength_level"

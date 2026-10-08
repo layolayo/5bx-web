@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { TodayWorkout, SubmitWorkoutPayload } from '../types';
+import { TodayWorkout, SubmitWorkoutPayload, ExerciseChartRow, WorkoutSessionHistory } from '../types';
+import { fetchSystemCharts } from '../api';
 import { playCountdownBeep, playTransitionChime, playCelebrationChime } from '../audio';
+import { usePrecisionTimer } from '../composables/usePrecisionTimer';
+import { getLastPerformance, getNextRungTarget, calculateTreadmillSpeed, formatDurationMmSs } from '../telemetry';
 
 const props = defineProps<{
   workout: TodayWorkout;
+  history?: WorkoutSessionHistory[];
   isGuest?: boolean;
   initialCardioMode?: 'stationary' | 'run' | 'walk';
 }>();
@@ -21,9 +25,13 @@ const stage = ref<WorkoutStage>('ready');
 const currentExerciseIndex = ref(0);
 const secondsRemaining = ref(props.workout.exercises[0].time_limit_seconds);
 const countdownDisplay = ref<number | string>(3);
-const isPaused = ref(false);
-let timerInterval: any = null;
 let countdownTimeout: any = null;
+
+// System charts cache for progressive next-level targets
+const systemCharts = ref<ExerciseChartRow[]>([]);
+
+// Precision Wall-Clock Timer with Screen Wake Lock
+const precisionTimer = usePrecisionTimer();
 
 // Recorded Reps State for each movement (Ex 1 to 5)
 const recordedReps = ref<number[]>([
@@ -131,9 +139,7 @@ function formatDuration(sec: number) {
 }
 
 const formattedCountdown = computed(() => {
-  const m = Math.floor(secondsRemaining.value / 60);
-  const s = secondsRemaining.value % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return precisionTimer.formattedRemaining.value;
 });
 
 const progressPercent = computed(() => {
@@ -142,11 +148,34 @@ const progressPercent = computed(() => {
     passed += props.workout.exercises[i].time_limit_seconds;
   }
   if (stage.value === 'running') {
-    passed += (currentExercise.value.time_limit_seconds - secondsRemaining.value);
+    passed += precisionTimer.elapsedSeconds.value;
   } else if (stage.value === 'record' || stage.value === 'finished') {
     passed += currentExercise.value.time_limit_seconds;
   }
   return Math.min(100, Math.round((passed / 660) * 100));
+});
+
+// Telemetry helpers for current exercise
+const currentPreviousPerformance = computed(() => {
+  return getLastPerformance(props.history || [], currentExerciseIndex.value + 1, cardioMode.value);
+});
+
+const currentNextRungTarget = computed(() => {
+  if (currentExerciseIndex.value < 4) {
+    return getNextRungTarget(
+      systemCharts.value,
+      props.workout.strength_chart,
+      props.workout.strength_level,
+      currentExerciseIndex.value + 1
+    );
+  }
+  return getNextRungTarget(
+    systemCharts.value,
+    props.workout.cardio_chart,
+    props.workout.cardio_level,
+    5,
+    cardioMode.value
+  );
 });
 
 // START INITIATION WITH 3-2-1 COUNTDOWN
@@ -169,42 +198,27 @@ function initiateExercise() {
 
         countdownTimeout = setTimeout(() => {
           stage.value = 'running';
-          isPaused.value = false;
-          timerInterval = setInterval(tick, 1000);
+          precisionTimer.startTimer(secondsRemaining.value, completeMovement);
         }, 600);
       }, 1000);
     }, 1000);
   }, 1000);
 }
 
-function tick() {
-  if (isPaused.value) return;
-
-  if (secondsRemaining.value > 0) {
-    secondsRemaining.value--;
-
-    if (secondsRemaining.value === 3 || secondsRemaining.value === 2) {
-      playCountdownBeep(false);
-    } else if (secondsRemaining.value === 1) {
-      playCountdownBeep(true);
-    }
-  } else {
-    // Timer reached 00:00 -> Halt and prompt for reps
-    completeMovement();
-  }
-}
-
 function completeMovement() {
-  if (timerInterval) {
-    clearInterval(timerInterval);
-    timerInterval = null;
-  }
+  const elapsed = precisionTimer.elapsedSeconds.value;
+  precisionTimer.stopTimer();
   playTransitionChime();
+  if (currentExerciseIndex.value === 4 && cardioMode.value !== 'stationary') {
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    cardioTimeString.value = `${m}:${s.toString().padStart(2, '0')}`;
+  }
   stage.value = 'record';
 }
 
 function togglePause() {
-  isPaused.value = !isPaused.value;
+  precisionTimer.togglePause();
 }
 
 // Adjust reps via buttons
@@ -238,13 +252,18 @@ function submitFinalWorkout() {
   });
 }
 
-onMounted(() => {
+onMounted(async () => {
   resetExerciseTime();
-  // Timer does NOT kick off automatically! Starts in 'ready' stage.
+  try {
+    const data = await fetchSystemCharts();
+    if (data?.charts) systemCharts.value = data.charts;
+  } catch (e) {
+    console.error('Failed to load system charts in TimerModal:', e);
+  }
 });
 
 onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval);
+  precisionTimer.stopTimer();
   if (countdownTimeout) clearTimeout(countdownTimeout);
 });
 </script>
@@ -375,23 +394,63 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <!-- Target Envelope Badge -->
-        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-950 border border-slate-800 text-sm font-bold text-slate-300 mb-6 shadow-inner">
-          <span class="text-slate-400">Mission Envelope:</span>
-          <span class="text-emerald-400 font-mono">
-            <template v-if="currentExerciseIndex < 4">
-              {{ currentExercise.target_reps }} reps in {{ formatDuration(currentExercise.time_limit_seconds) }}
-            </template>
-            <template v-else-if="cardioMode === 'stationary'">
-              {{ currentExercise.target_reps }} steps in 6m 00s
-            </template>
-            <template v-else-if="cardioMode === 'run'">
-              Beat {{ formatDuration(currentExercise.alt_run_time_seconds) }}
-            </template>
-            <template v-else>
-              Beat {{ formatDuration(currentExercise.alt_walk_time_seconds) }}
-            </template>
-          </span>
+        <!-- Telemetry Cluster: Previous Sortie | Today's Standard | Next Rung Target -->
+        <div class="w-full grid grid-cols-3 gap-2 bg-slate-950/80 p-3 rounded-2xl border border-slate-800 text-left mb-4 font-mono text-xs">
+          <div class="border-r border-slate-800 pr-2">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-0.5">Previous Sortie</span>
+            <span class="text-amber-400 font-bold">
+              {{ currentPreviousPerformance?.display || 'None logged' }}
+            </span>
+          </div>
+          <div class="border-r border-slate-800 pr-2 pl-1">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-0.5">Today's Standard</span>
+            <span class="text-emerald-400 font-bold">
+              <template v-if="currentExerciseIndex < 4">
+                {{ currentExercise.target_reps }} reps
+              </template>
+              <template v-else-if="cardioMode === 'stationary'">
+                {{ currentExercise.target_reps }} steps
+              </template>
+              <template v-else-if="cardioMode === 'run'">
+                ≤ {{ formatDuration(currentExercise.alt_run_time_seconds) }}
+              </template>
+              <template v-else>
+                ≤ {{ formatDuration(currentExercise.alt_walk_time_seconds) }}
+              </template>
+            </span>
+          </div>
+          <div class="pl-1">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-0.5">Next Rung Target</span>
+            <span class="text-cyan-400 font-bold">
+              {{ currentNextRungTarget?.display || 'Max Standard' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Target Envelope Badge & Screen Wake Lock status -->
+        <div class="flex flex-col items-center gap-2 mb-6">
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-950 border border-slate-800 text-sm font-bold text-slate-300 shadow-inner">
+            <span class="text-slate-400">Mission Envelope:</span>
+            <span class="text-emerald-400 font-mono">
+              <template v-if="currentExerciseIndex < 4">
+                {{ currentExercise.target_reps }} reps in {{ formatDuration(currentExercise.time_limit_seconds) }}
+              </template>
+              <template v-else-if="cardioMode === 'stationary'">
+                {{ currentExercise.target_reps }} steps in 6m 00s
+              </template>
+              <template v-else-if="cardioMode === 'run'">
+                Beat {{ formatDuration(currentExercise.alt_run_time_seconds) }}
+              </template>
+              <template v-else>
+                Beat {{ formatDuration(currentExercise.alt_walk_time_seconds) }}
+              </template>
+            </span>
+          </div>
+
+          <div v-if="precisionTimer.isWakeLockActive.value" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-[11px] font-mono font-bold text-emerald-400">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>📱 Screen Stay-Awake Active</span>
+          </div>
         </div>
 
         <!-- Big INITIATE Button -->
@@ -457,33 +516,55 @@ onUnmounted(() => {
       <!-- Main Body -->
       <div class="p-6 sm:p-8 flex flex-col items-center text-center relative z-10">
         <!-- Exercise Illustration -->
-        <div class="w-48 h-32 bg-white rounded-2xl p-2.5 flex items-center justify-center shadow-inner mb-6 border border-slate-300">
+        <div class="w-48 h-32 bg-white rounded-2xl p-2.5 flex items-center justify-center shadow-inner mb-5 border border-slate-300">
           <img :src="'/images/' + currentExercise.image_path" :alt="currentExercise.name" class="max-h-full max-w-full object-contain" />
         </div>
 
-        <!-- Big Countdown Timer -->
-        <div class="text-7xl font-black font-mono tracking-tight text-white mb-2 tabular-nums">
+        <!-- Big Countdown Timer & Live Elapsed -->
+        <div class="text-7xl font-black font-mono tracking-tight text-white mb-1 tabular-nums">
           {{ formattedCountdown }}
         </div>
+        <div class="text-xs font-mono text-slate-400 mb-3">
+          Elapsed: <span class="text-cyan-400 font-bold">{{ precisionTimer.formattedElapsed.value }}</span>
+        </div>
 
-        <!-- Cadence Target -->
-        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950 border border-slate-800 text-sm font-bold text-slate-300 mb-5">
-          <span>Cadence Target:</span>
-          <span class="text-emerald-400 font-mono">
-            <template v-if="currentExerciseIndex < 4">
-              {{ currentExercise.target_reps }} reps
-            </template>
-            <template v-else-if="cardioMode === 'stationary'">
-              {{ currentExercise.target_reps }} steps
-            </template>
-            <template v-else>
-              Under {{ formatDuration(currentCardioTargetSeconds) }}
-            </template>
-          </span>
+        <!-- Screen Wake Lock indicator -->
+        <div v-if="precisionTimer.isWakeLockActive.value" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-[10px] font-mono font-bold text-emerald-400 mb-4">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>📱 Stay-Awake Active</span>
+        </div>
+
+        <!-- Cadence Target & Telemetry strip -->
+        <div class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 mb-5 flex flex-wrap items-center justify-around gap-2 text-xs font-mono">
+          <div v-if="currentPreviousPerformance" class="text-slate-400">
+            Previous: <span class="text-amber-400 font-bold">{{ currentPreviousPerformance.display }}</span>
+          </div>
+          <div class="text-slate-300">
+            Target: <span class="text-emerald-400 font-bold">
+              <template v-if="currentExerciseIndex < 4">
+                {{ currentExercise.target_reps }} reps
+              </template>
+              <template v-else-if="cardioMode === 'stationary'">
+                {{ currentExercise.target_reps }} steps
+              </template>
+              <template v-else>
+                &lt; {{ formatDuration(currentCardioTargetSeconds) }}
+              </template>
+            </span>
+          </div>
+          <div v-if="currentNextRungTarget" class="text-slate-400">
+            Next Rung: <span class="text-cyan-400 font-bold">{{ currentNextRungTarget.display }}</span>
+          </div>
+        </div>
+
+        <!-- Speed banner if Run/Walk -->
+        <div v-if="currentExerciseIndex === 4 && cardioMode !== 'stationary' && treadmillSpeed.mph > 0" class="w-full mb-4 p-2 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs font-mono text-cyan-300 flex items-center justify-between">
+          <span class="text-slate-400">Treadmill Target Speed:</span>
+          <span class="font-bold">≥ {{ treadmillSpeed.kph.toFixed(1) }} km/h ({{ treadmillSpeed.mph.toFixed(1) }} mph)</span>
         </div>
 
         <!-- Technique instructions -->
-        <div class="w-full bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 text-left mb-6 max-h-20 overflow-y-auto">
+        <div class="w-full bg-slate-950/80 p-3.5 rounded-xl border border-slate-800 text-xs text-slate-300 text-left mb-5 max-h-20 overflow-y-auto">
           <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">Posture Cue</span>
           {{ currentExercise.instructions }}
         </div>
@@ -507,9 +588,9 @@ onUnmounted(() => {
           <button
             @click="togglePause"
             class="flex-1 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider shadow transition-all cursor-pointer"
-            :class="isPaused ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'"
+            :class="precisionTimer.isPaused.value ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700'"
           >
-            {{ isPaused ? '▶ Resume' : '⏸ Pause' }}
+            {{ precisionTimer.isPaused.value ? '▶ Resume' : '⏸ Pause' }}
           </button>
           <button
             @click="completeMovement"
@@ -536,6 +617,29 @@ onUnmounted(() => {
         <p class="text-xs text-slate-400 mt-0.5">
           Record your actual score for <strong>{{ currentExercise.name }}</strong>
         </p>
+      </div>
+
+      <!-- Telemetry Context: Previous Sortie | Current Target | Next Level -->
+      <div class="w-full bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 mb-4 flex flex-wrap items-center justify-around gap-2 text-xs font-mono">
+        <div v-if="currentPreviousPerformance" class="text-slate-400">
+          Previous: <span class="text-amber-400 font-bold">{{ currentPreviousPerformance.display }}</span>
+        </div>
+        <div class="text-slate-300">
+          Standard: <span class="text-emerald-400 font-bold">
+            <template v-if="currentExerciseIndex < 4">
+              {{ currentExercise.target_reps }} reps
+            </template>
+            <template v-else-if="cardioMode === 'stationary'">
+              {{ currentExercise.target_reps }} steps
+            </template>
+            <template v-else>
+              &lt; {{ formatDuration(currentCardioTargetSeconds) }}
+            </template>
+          </span>
+        </div>
+        <div v-if="currentNextRungTarget" class="text-slate-400">
+          Next Rung: <span class="text-cyan-400 font-bold">{{ currentNextRungTarget.display }}</span>
+        </div>
       </div>
 
       <!-- Rep input for Ex 1-4 -->
@@ -632,6 +736,10 @@ onUnmounted(() => {
           <div class="flex items-center justify-between text-xs text-slate-400 font-mono">
             <span>Standard Time:</span>
             <span class="text-cyan-400 font-bold text-sm">Under {{ formatDuration(currentCardioTargetSeconds) }}</span>
+          </div>
+
+          <div v-if="cardioTimeString" class="text-[11px] font-mono text-cyan-400 font-bold text-center bg-cyan-950/40 border border-cyan-500/20 py-1 rounded-lg">
+            Elapsed Time Captured: {{ cardioTimeString }}
           </div>
 
           <div>

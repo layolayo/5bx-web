@@ -1,15 +1,51 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { TodayWorkout, SubmitWorkoutPayload } from '../types';
+import { ref, computed, onMounted } from 'vue';
+import { TodayWorkout, SubmitWorkoutPayload, ExerciseChartRow, WorkoutSessionHistory } from '../types';
+import { fetchSystemCharts } from '../api';
+import { getLastPerformance, getNextRungTarget, calculateTreadmillSpeed, formatDurationMmSs } from '../telemetry';
 
 const props = defineProps<{
   workout: TodayWorkout;
+  history?: WorkoutSessionHistory[];
 }>();
 
 const emit = defineEmits<{
   (e: 'close'): void;
   (e: 'submit', payload: SubmitWorkoutPayload): void;
 }>();
+
+const systemCharts = ref<ExerciseChartRow[]>([]);
+
+onMounted(async () => {
+  try {
+    const data = await fetchSystemCharts();
+    if (data?.charts) systemCharts.value = data.charts;
+  } catch (e) {
+    console.error('Failed to load system charts in ManualLogModal:', e);
+  }
+});
+
+function getExPrevious(exNum: number) {
+  return getLastPerformance(props.history || [], exNum, cardioMode.value);
+}
+
+function getExNextRung(exNum: number) {
+  if (exNum < 5) {
+    return getNextRungTarget(
+      systemCharts.value,
+      props.workout.strength_chart,
+      props.workout.strength_level,
+      exNum
+    );
+  }
+  return getNextRungTarget(
+    systemCharts.value,
+    props.workout.cardio_chart,
+    props.workout.cardio_level,
+    5,
+    cardioMode.value
+  );
+}
 
 const reps1 = ref(props.workout.exercises[0]?.target_reps || 0);
 const reps2 = ref(props.workout.exercises[1]?.target_reps || 0);
@@ -145,67 +181,111 @@ function submitLog() {
       <form @submit.prevent="submitLog" class="space-y-4">
         <!-- 4 Strength Exercises -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Ex 1: Forward Bends
-            </label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model.number="reps1"
-                type="number"
-                required
-                min="0"
-                class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
-              />
-              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[0]?.target_reps }}</span>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Ex 1: Forward Bends
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="reps1"
+                  type="number"
+                  required
+                  min="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+                <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[0]?.target_reps }}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-[10px] font-mono mt-2 pt-1 border-t border-slate-900 gap-1">
+              <span v-if="getExPrevious(1)" class="text-amber-400">
+                Last: {{ getExPrevious(1)?.display }}
+              </span>
+              <span v-else class="text-slate-600">First sortie</span>
+              <span v-if="getExNextRung(1)" class="text-cyan-400">
+                Next: {{ getExNextRung(1)?.display }}
+              </span>
             </div>
           </div>
 
-          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Ex 2: Sit-Ups
-            </label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model.number="reps2"
-                type="number"
-                required
-                min="0"
-                class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
-              />
-              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[1]?.target_reps }}</span>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Ex 2: Sit-Ups
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="reps2"
+                  type="number"
+                  required
+                  min="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+                <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[1]?.target_reps }}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-[10px] font-mono mt-2 pt-1 border-t border-slate-900 gap-1">
+              <span v-if="getExPrevious(2)" class="text-amber-400">
+                Last: {{ getExPrevious(2)?.display }}
+              </span>
+              <span v-else class="text-slate-600">First sortie</span>
+              <span v-if="getExNextRung(2)" class="text-cyan-400">
+                Next: {{ getExNextRung(2)?.display }}
+              </span>
             </div>
           </div>
 
-          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Ex 3: Back Arches
-            </label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model.number="reps3"
-                type="number"
-                required
-                min="0"
-                class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
-              />
-              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[2]?.target_reps }}</span>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Ex 3: Back Arches
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="reps3"
+                  type="number"
+                  required
+                  min="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+                <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[2]?.target_reps }}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-[10px] font-mono mt-2 pt-1 border-t border-slate-900 gap-1">
+              <span v-if="getExPrevious(3)" class="text-amber-400">
+                Last: {{ getExPrevious(3)?.display }}
+              </span>
+              <span v-else class="text-slate-600">First sortie</span>
+              <span v-if="getExNextRung(3)" class="text-cyan-400">
+                Next: {{ getExNextRung(3)?.display }}
+              </span>
             </div>
           </div>
 
-          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800">
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Ex 4: Push-Ups
-            </label>
-            <div class="flex items-center gap-2">
-              <input
-                v-model.number="reps4"
-                type="number"
-                required
-                min="0"
-                class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
-              />
-              <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[3]?.target_reps }}</span>
+          <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex flex-col justify-between">
+            <div>
+              <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                Ex 4: Push-Ups
+              </label>
+              <div class="flex items-center gap-2">
+                <input
+                  v-model.number="reps4"
+                  type="number"
+                  required
+                  min="0"
+                  class="w-full bg-slate-900 text-white font-black text-xl p-2 rounded-xl border border-slate-700 text-center focus:border-cyan-500 focus:outline-none"
+                />
+                <span class="text-xs text-slate-500 font-mono">/ {{ workout.exercises[3]?.target_reps }}</span>
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between text-[10px] font-mono mt-2 pt-1 border-t border-slate-900 gap-1">
+              <span v-if="getExPrevious(4)" class="text-amber-400">
+                Last: {{ getExPrevious(4)?.display }}
+              </span>
+              <span v-else class="text-slate-600">First sortie</span>
+              <span v-if="getExNextRung(4)" class="text-cyan-400">
+                Next: {{ getExNextRung(4)?.display }}
+              </span>
             </div>
           </div>
         </div>
@@ -329,6 +409,17 @@ function submitLog() {
                 </span>
               </div>
             </div>
+          </div>
+
+          <!-- Telemetry for Ex 5 -->
+          <div class="flex flex-wrap items-center justify-between text-[10px] font-mono mt-3 pt-2 border-t border-slate-900 gap-1">
+            <span v-if="getExPrevious(5)" class="text-amber-400">
+              Previous Sortie: {{ getExPrevious(5)?.display }}
+            </span>
+            <span v-else class="text-slate-600">First sortie</span>
+            <span v-if="getExNextRung(5)" class="text-cyan-400">
+              Next Rung: {{ getExNextRung(5)?.display }}
+            </span>
           </div>
         </div>
 

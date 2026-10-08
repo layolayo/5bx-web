@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { LayoffStatus, DiagnosticPlacementResult, ExerciseInstructionRow } from '../types';
+import { LayoffStatus, DiagnosticPlacementResult, ExerciseInstructionRow, ExerciseChartRow, WorkoutSessionHistory } from '../types';
 import { evaluateDiagnostic, applyAssessment, fetchSystemCharts } from '../api';
 import { playCountdownBeep, playTransitionChime, playCelebrationChime } from '../audio';
+import { usePrecisionTimer } from '../composables/usePrecisionTimer';
+import { getLastPerformance, calculateTreadmillSpeed, formatDurationMmSs } from '../telemetry';
 
 const props = defineProps<{
   show: boolean;
+  history?: WorkoutSessionHistory[];
   layoffStatus: LayoffStatus | null;
   currentStrengthChart: number;
   currentStrengthLevel: number;
@@ -36,23 +39,128 @@ const chartDescriptions: Record<number, string> = {
   6: 'Chart 6: Elite flight standard. Maximum RCAF aerobatic & extreme physical standard.',
 };
 
-// System exercise instructions cache
+// System exercise instructions & charts cache
 const systemInstructions = ref<ExerciseInstructionRow[]>([]);
+const systemCharts = ref<ExerciseChartRow[]>([]);
 
 async function loadInstructions() {
   try {
     const data = await fetchSystemCharts();
-    if (data && data.instructions) {
-      systemInstructions.value = data.instructions;
+    if (data) {
+      if (data.instructions) systemInstructions.value = data.instructions;
+      if (data.charts) systemCharts.value = data.charts;
     }
   } catch (e) {
     console.error('Failed to load system instructions:', e);
   }
 }
 
+// Diagnostic benchmark form state
+const ex1Reps = ref<number>(14);
+const ex2Reps = ref<number>(10);
+const ex3Reps = ref<number>(12);
+const ex4Reps = ref<number>(8);
+const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
+const cardioReps = ref<number>(250);
+const cardioMin = ref<number>(8);
+const cardioSec = ref<number>(30);
+
+// Candidate cardio distance & pace calculations
+const candidateCardioDistanceMiles = computed(() => {
+  if (cardioMode.value === 'run') {
+    return candidateChart.value === 1 ? 0.5 : 1.0;
+  }
+  if (cardioMode.value === 'walk') {
+    return candidateChart.value === 1 ? 1.0 : 2.0;
+  }
+  return 0;
+});
+
+const candidateCardioDistanceKm = computed(() => {
+  return (candidateCardioDistanceMiles.value * 1.60934).toFixed(1);
+});
+
+const candidateCardioEntryRow = computed(() => {
+  return systemCharts.value.find((c) => c.chart === candidateChart.value && c.level === 1);
+});
+
+const candidateCardioEliteRow = computed(() => {
+  return systemCharts.value.find((c) => c.chart === candidateChart.value && c.level === 12);
+});
+
+const candidateCardioTargetSeconds = computed(() => {
+  const row = candidateCardioEntryRow.value;
+  if (!row) return cardioMode.value === 'stationary' ? 360 : (cardioMode.value === 'run' ? 525 : 1740);
+  if (cardioMode.value === 'run') return row.ex5_run;
+  if (cardioMode.value === 'walk') return row.ex5_walk;
+  return 360;
+});
+
+const candidateTreadmillSpeed = computed(() => {
+  return calculateTreadmillSpeed(candidateCardioDistanceMiles.value, candidateCardioTargetSeconds.value);
+});
+
+function getCandidateStandard(exNum: number, tier: 'entry' | 'elite'): string {
+  const row = tier === 'entry' ? candidateCardioEntryRow.value : candidateCardioEliteRow.value;
+  if (!row) return '—';
+  if (exNum === 1) return `${row.ex1} reps`;
+  if (exNum === 2) return `${row.ex2} reps`;
+  if (exNum === 3) return `${row.ex3} reps`;
+  if (exNum === 4) return `${row.ex4} reps`;
+  if (exNum === 5) {
+    if (cardioMode.value === 'stationary') return `${row.ex5} steps`;
+    if (cardioMode.value === 'run') return `≤ ${formatDurationMmSs(row.ex5_run)}`;
+    if (cardioMode.value === 'walk') return `≤ ${formatDurationMmSs(row.ex5_walk)}`;
+  }
+  return '—';
+}
+
 // Candidate Chart exercises (1 to 5)
 const candidateExercises = computed(() => {
   return [1, 2, 3, 4, 5].map((exNum) => {
+    if (exNum === 5) {
+      if (cardioMode.value === 'run') {
+        const dist = candidateCardioDistanceMiles.value;
+        const km = candidateCardioDistanceKm.value;
+        const targetSec = candidateCardioTargetSeconds.value;
+        return {
+          exercise_number: 5,
+          name: `${dist}-Mile Continuous Run (${km} km)`,
+          instructions: `Run continuously at a steady aerobic cadence over ${dist} mi (${km} km). On treadmill, maintain at least ${candidateTreadmillSpeed.value.display} without holding handrails.`,
+          image_path: 'run.png',
+          time_limit_seconds: targetSec,
+          distance_miles: dist,
+          target_sec: targetSec,
+        };
+      }
+      if (cardioMode.value === 'walk') {
+        const dist = candidateCardioDistanceMiles.value;
+        const km = candidateCardioDistanceKm.value;
+        const targetSec = candidateCardioTargetSeconds.value;
+        return {
+          exercise_number: 5,
+          name: `${dist}-Mile Continuous Walk (${km} km)`,
+          instructions: `Vigorous, continuous outdoor or treadmill walking over ${dist} mi (${km} km). Maintain brisk cadence with arms swinging freely. Note: Charts 5 & 6 require running.`,
+          image_path: 'walk.png',
+          time_limit_seconds: targetSec,
+          distance_miles: dist,
+          target_sec: targetSec,
+        };
+      }
+      const inst5 = systemInstructions.value.find(
+        (i) => i.chart === candidateChart.value && i.exercise === 5
+      );
+      return {
+        exercise_number: 5,
+        name: inst5?.name || 'Stationary Run',
+        instructions: inst5?.instructions || 'Stationary running with scissor jumps every 75 steps (count each time left foot touches the ground).',
+        image_path: inst5?.image_path || `c${candidateChart.value}_ex5.png`,
+        time_limit_seconds: 360,
+        distance_miles: 0,
+        target_sec: 360,
+      };
+    }
+
     const inst = systemInstructions.value.find(
       (i) => i.chart === candidateChart.value && i.exercise === exNum
     );
@@ -70,37 +178,27 @@ const candidateExercises = computed(() => {
       name: inst?.name || defaultNames[exNum],
       instructions: inst?.instructions || 'Execute repetitions strictly with controlled cadence within the designated time envelope.',
       image_path: inst?.image_path || defaultImages[exNum],
-      time_limit_seconds: exNum === 1 ? 120 : (exNum <= 4 ? 60 : 360),
+      time_limit_seconds: exNum === 1 ? 120 : 60,
+      distance_miles: 0,
+      target_sec: exNum === 1 ? 120 : 60,
     };
   });
 });
-
-// Diagnostic benchmark form state
-const ex1Reps = ref<number>(14);
-const ex2Reps = ref<number>(10);
-const ex3Reps = ref<number>(12);
-const ex4Reps = ref<number>(8);
-const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
-const cardioReps = ref<number>(250);
-const cardioMin = ref<number>(8);
-const cardioSec = ref<number>(30);
 
 const isEvaluating = ref(false);
 const isApplying = ref(false);
 const placementResult = ref<DiagnosticPlacementResult | null>(null);
 const errorMessage = ref<string>('');
 
-// Interactive Drill Timer State
+// Interactive Drill Timer State (Precision Wall-Clock with Screen Wake Lock)
+const precisionTimer = usePrecisionTimer();
 const activeDrillExercise = ref<any | null>(null);
 type DrillStage = 'ready' | 'countdown' | 'running' | 'record';
 const drillStage = ref<DrillStage>('ready');
-const drillSecondsRemaining = ref(0);
 const drillCountdown = ref<number | string>(3);
 const drillRecordedReps = ref<number>(0);
 const drillRecordedMin = ref<number>(8);
 const drillRecordedSec = ref<number>(30);
-const isDrillPaused = ref(false);
-let drillInterval: any = null;
 let drillCountdownTimeout: any = null;
 
 // Synchronise tab and data on modal show
@@ -164,17 +262,19 @@ async function calculateLivePlacement() {
 function startDrill(ex: any) {
   activeDrillExercise.value = ex;
   drillStage.value = 'ready';
-  isDrillPaused.value = false;
-  drillSecondsRemaining.value = ex.time_limit_seconds;
+  precisionTimer.stopTimer();
 
   if (ex.exercise_number === 1) drillRecordedReps.value = ex1Reps.value;
   else if (ex.exercise_number === 2) drillRecordedReps.value = ex2Reps.value;
   else if (ex.exercise_number === 3) drillRecordedReps.value = ex3Reps.value;
   else if (ex.exercise_number === 4) drillRecordedReps.value = ex4Reps.value;
   else if (ex.exercise_number === 5) {
-    drillRecordedReps.value = cardioReps.value;
-    drillRecordedMin.value = cardioMin.value;
-    drillRecordedSec.value = cardioSec.value;
+    if (cardioMode.value === 'stationary') {
+      drillRecordedReps.value = cardioReps.value;
+    } else {
+      drillRecordedMin.value = cardioMin.value;
+      drillRecordedSec.value = cardioSec.value;
+    }
   }
 }
 
@@ -201,32 +301,31 @@ function beginDrillCountdown() {
 }
 
 function startDrillClock() {
+  if (!activeDrillExercise.value) return;
   drillStage.value = 'running';
-  clearInterval(drillInterval);
-  drillInterval = setInterval(() => {
-    if (!isDrillPaused.value) {
-      if (drillSecondsRemaining.value > 1) {
-        drillSecondsRemaining.value--;
-        if (drillSecondsRemaining.value <= 3) {
-          playCountdownBeep(false);
-        }
-      } else {
-        drillSecondsRemaining.value = 0;
-        clearInterval(drillInterval);
-        playTransitionChime();
-        drillStage.value = 'record';
-      }
-    }
-  }, 1000);
+  precisionTimer.startTimer(activeDrillExercise.value.time_limit_seconds, onDrillComplete);
+}
+
+function onDrillComplete() {
+  if (activeDrillExercise.value?.exercise_number === 5 && cardioMode.value !== 'stationary') {
+    const elapsed = activeDrillExercise.value.time_limit_seconds;
+    drillRecordedMin.value = Math.floor(elapsed / 60);
+    drillRecordedSec.value = elapsed % 60;
+  }
+  drillStage.value = 'record';
 }
 
 function toggleDrillPause() {
-  isDrillPaused.value = !isDrillPaused.value;
+  precisionTimer.togglePause();
 }
 
 function finishDrillEarly() {
-  clearInterval(drillInterval);
-  playTransitionChime();
+  const elapsed = precisionTimer.elapsedSeconds.value;
+  precisionTimer.finishTimer();
+  if (activeDrillExercise.value?.exercise_number === 5 && cardioMode.value !== 'stationary') {
+    drillRecordedMin.value = Math.floor(elapsed / 60);
+    drillRecordedSec.value = elapsed % 60;
+  }
   drillStage.value = 'record';
 }
 
@@ -252,11 +351,10 @@ function saveDrillPerformance() {
 }
 
 function cancelDrill() {
-  clearInterval(drillInterval);
+  precisionTimer.stopTimer();
   clearTimeout(drillCountdownTimeout);
   activeDrillExercise.value = null;
   drillStage.value = 'ready';
-  isDrillPaused.value = false;
 }
 
 function formatMmSs(totalSeconds: number): string {
@@ -577,6 +675,17 @@ const severityColour = computed(() => {
                       <span class="text-[10px] font-mono text-emerald-400 font-bold">2 mins</span>
                     </div>
                     <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{{ candidateExercises[0].instructions }}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 text-[9px] font-mono mt-1.5">
+                      <span v-if="getLastPerformance(props.history || [], 1)" class="text-amber-400 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                        Last: {{ getLastPerformance(props.history || [], 1)?.display }}
+                      </span>
+                      <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                        Entry (D-): {{ getCandidateStandard(1, 'entry') }}
+                      </span>
+                      <span class="text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                        Elite (A+): {{ getCandidateStandard(1, 'elite') }}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -625,6 +734,17 @@ const severityColour = computed(() => {
                       <span class="text-[10px] font-mono text-emerald-400 font-bold">1 min</span>
                     </div>
                     <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{{ candidateExercises[1].instructions }}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 text-[9px] font-mono mt-1.5">
+                      <span v-if="getLastPerformance(props.history || [], 2)" class="text-amber-400 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                        Last: {{ getLastPerformance(props.history || [], 2)?.display }}
+                      </span>
+                      <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                        Entry (D-): {{ getCandidateStandard(2, 'entry') }}
+                      </span>
+                      <span class="text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                        Elite (A+): {{ getCandidateStandard(2, 'elite') }}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -673,6 +793,17 @@ const severityColour = computed(() => {
                       <span class="text-[10px] font-mono text-emerald-400 font-bold">1 min</span>
                     </div>
                     <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{{ candidateExercises[2].instructions }}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 text-[9px] font-mono mt-1.5">
+                      <span v-if="getLastPerformance(props.history || [], 3)" class="text-amber-400 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                        Last: {{ getLastPerformance(props.history || [], 3)?.display }}
+                      </span>
+                      <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                        Entry (D-): {{ getCandidateStandard(3, 'entry') }}
+                      </span>
+                      <span class="text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                        Elite (A+): {{ getCandidateStandard(3, 'elite') }}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -721,6 +852,17 @@ const severityColour = computed(() => {
                       <span class="text-[10px] font-mono text-emerald-400 font-bold">1 min</span>
                     </div>
                     <p class="text-[10px] text-slate-400 line-clamp-2 mt-0.5">{{ candidateExercises[3].instructions }}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 text-[9px] font-mono mt-1.5">
+                      <span v-if="getLastPerformance(props.history || [], 4)" class="text-amber-400 bg-amber-950/60 border border-amber-500/30 px-1.5 py-0.5 rounded">
+                        Last: {{ getLastPerformance(props.history || [], 4)?.display }}
+                      </span>
+                      <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.5 rounded">
+                        Entry (D-): {{ getCandidateStandard(4, 'entry') }}
+                      </span>
+                      <span class="text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-1.5 py-0.5 rounded">
+                        Elite (A+): {{ getCandidateStandard(4, 'elite') }}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -797,7 +939,11 @@ const severityColour = computed(() => {
                 <div>
                   <div class="text-xs font-black text-white">5. {{ candidateExercises[4].name }}</div>
                   <div class="text-[10px] text-slate-400 mt-0.5">
-                    {{ cardioMode === 'stationary' ? '6 Minutes Stationary Run (10 scissor jumps / 75 steps)' : (cardioMode === 'run' ? 'Continuous 1-Mile Jog/Run' : 'Continuous 2-Mile Walk') }}
+                    {{ cardioMode === 'stationary' ? '6 Minutes Stationary Run (10 scissor jumps / 75 steps)' : (cardioMode === 'run' ? `Continuous ${candidateCardioDistanceMiles} mi (${candidateCardioDistanceKm} km) Run` : `Continuous ${candidateCardioDistanceMiles} mi (${candidateCardioDistanceKm} km) Walk`) }}
+                  </div>
+                  <!-- Treadmill speed recommendation if run/walk -->
+                  <div v-if="cardioMode !== 'stationary' && candidateTreadmillSpeed.mph > 0" class="text-[10px] font-mono text-cyan-300 mt-0.5">
+                    Treadmill target: ≥ <strong>{{ candidateTreadmillSpeed.display }}</strong>
                   </div>
                 </div>
               </div>
@@ -847,6 +993,19 @@ const severityColour = computed(() => {
                   </div>
                 </div>
               </div>
+            </div>
+
+            <!-- Historical & candidate benchmarks -->
+            <div class="flex flex-wrap items-center gap-2 text-[10px] font-mono pt-1">
+              <span v-if="getLastPerformance(props.history || [], 5, cardioMode)" class="text-amber-400 bg-amber-950/60 border border-amber-500/30 px-2 py-0.5 rounded-lg">
+                Last Logged: {{ getLastPerformance(props.history || [], 5, cardioMode)?.display }}
+              </span>
+              <span class="text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-lg">
+                Chart {{ candidateChart }} Entry (D-): {{ getCandidateStandard(5, 'entry') }}
+              </span>
+              <span class="text-cyan-400 bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-lg">
+                Elite Standard (A+): {{ getCandidateStandard(5, 'elite') }}
+              </span>
             </div>
           </div>
 
@@ -942,7 +1101,7 @@ const severityColour = computed(() => {
       v-if="activeDrillExercise"
       class="fixed inset-0 z-60 bg-slate-950/95 backdrop-blur-xl flex items-center justify-center p-4 animate-in fade-in duration-200"
     >
-      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg p-6 shadow-2xl relative flex flex-col space-y-5 text-center">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-3xl w-full max-w-lg p-6 shadow-2xl relative flex flex-col space-y-4 text-center">
         <!-- Close / Cancel button -->
         <button
           @click="cancelDrill"
@@ -951,7 +1110,7 @@ const severityColour = computed(() => {
           ✕
         </button>
 
-        <!-- Movement Title & Time Envelope -->
+        <!-- Movement Title & Mission Envelope -->
         <div>
           <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
             Movement {{ activeDrillExercise.exercise_number }} • Candidate Chart {{ candidateChart }}
@@ -959,18 +1118,50 @@ const severityColour = computed(() => {
           <h3 class="text-xl font-black text-white uppercase tracking-tight mt-1.5">
             {{ activeDrillExercise.name }}
           </h3>
-          <p class="text-xs text-slate-400 font-mono">
-            Time Envelope: {{ activeDrillExercise.time_limit_seconds >= 60 ? (activeDrillExercise.time_limit_seconds / 60) + ' Minutes' : activeDrillExercise.time_limit_seconds + ' Seconds' }}
+          <p class="text-xs text-slate-400 font-mono mt-0.5">
+            <template v-if="activeDrillExercise.exercise_number === 5 && cardioMode !== 'stationary'">
+              Target Ceiling: ≤ {{ formatDurationMmSs(activeDrillExercise.time_limit_seconds) }} ({{ candidateCardioDistanceMiles }} mi / {{ candidateCardioDistanceKm }} km)
+            </template>
+            <template v-else>
+              Time Envelope: {{ activeDrillExercise.time_limit_seconds >= 60 ? (activeDrillExercise.time_limit_seconds / 60) + ' Minutes' : activeDrillExercise.time_limit_seconds + ' Seconds' }}
+            </template>
           </p>
+
+          <!-- Treadmill speed target if Run/Walk -->
+          <div v-if="activeDrillExercise.exercise_number === 5 && cardioMode !== 'stationary' && candidateTreadmillSpeed.mph > 0" class="text-xs font-mono text-cyan-300 font-bold mt-1">
+            Treadmill Target: ≥ {{ candidateTreadmillSpeed.display }}
+          </div>
+        </div>
+
+        <!-- Screen Wake Lock indicator -->
+        <div v-if="precisionTimer.isWakeLockActive.value" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-950/70 border border-emerald-500/30 text-[11px] font-mono font-bold text-emerald-400 mx-auto">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>📱 Screen Stay-Awake Active</span>
         </div>
 
         <!-- STAGE 1: GET SET BRIEFING -->
-        <div v-if="drillStage === 'ready'" class="space-y-4">
-          <div class="w-full h-40 bg-white rounded-2xl p-3 flex items-center justify-center border border-slate-300 shadow-inner">
+        <div v-if="drillStage === 'ready'" class="space-y-3.5">
+          <div class="w-full h-36 bg-white rounded-2xl p-2.5 flex items-center justify-center border border-slate-300 shadow-inner">
             <img :src="'/images/' + activeDrillExercise.image_path" :alt="activeDrillExercise.name" class="max-h-full max-w-full object-contain" />
           </div>
 
-          <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800 text-left">
+          <!-- Tactical Telemetry: Previous vs Entry vs Elite -->
+          <div class="grid grid-cols-2 gap-2 text-left bg-slate-950/90 p-3 rounded-xl border border-slate-800 text-xs font-mono">
+            <div>
+              <span class="text-slate-500 block text-[10px] uppercase font-bold">Previous Sortie</span>
+              <span class="text-amber-400 font-bold">
+                {{ getLastPerformance(props.history || [], activeDrillExercise.exercise_number, cardioMode)?.display || 'None recorded' }}
+              </span>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[10px] uppercase font-bold">Entry Standard (D-)</span>
+              <span class="text-emerald-400 font-bold">
+                {{ getCandidateStandard(activeDrillExercise.exercise_number, 'entry') }}
+              </span>
+            </div>
+          </div>
+
+          <div class="bg-slate-950 p-3 rounded-2xl border border-slate-800 text-left">
             <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Technique Cue:</div>
             <p class="text-xs text-slate-300 leading-relaxed">{{ activeDrillExercise.instructions }}</p>
           </div>
@@ -978,14 +1169,14 @@ const severityColour = computed(() => {
           <button
             type="button"
             @click="beginDrillCountdown"
-            class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-base uppercase tracking-wider shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition cursor-pointer"
+            class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition cursor-pointer"
           >
             I Am Ready • Start Timer ⏱️
           </button>
         </div>
 
         <!-- STAGE 2: 3-2-1 COUNTDOWN -->
-        <div v-else-if="drillStage === 'countdown'" class="py-12 space-y-4 flex flex-col items-center justify-center">
+        <div v-else-if="drillStage === 'countdown'" class="py-10 space-y-4 flex flex-col items-center justify-center">
           <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Get Set...</div>
           <div class="text-7xl font-black text-cyan-400 animate-pulse tabular-nums">
             {{ drillCountdown }}
@@ -994,35 +1185,45 @@ const severityColour = computed(() => {
         </div>
 
         <!-- STAGE 3: RUNNING DRILL TIMER -->
-        <div v-else-if="drillStage === 'running'" class="py-4 space-y-5 flex flex-col items-center">
+        <div v-else-if="drillStage === 'running'" class="py-3 space-y-4 flex flex-col items-center">
           <!-- Timer Display -->
-          <div class="relative flex items-center justify-center">
+          <div class="relative flex flex-col items-center justify-center">
             <div class="text-6xl font-black font-mono tracking-tight text-white tabular-nums">
-              {{ formatMmSs(drillSecondsRemaining) }}
+              {{ precisionTimer.formattedRemaining.value }}
+            </div>
+            <div class="text-xs font-mono text-slate-400 mt-1">
+              Elapsed: <span class="text-cyan-400 font-bold">{{ precisionTimer.formattedElapsed.value }}</span>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
             <span class="text-xs font-semibold text-slate-300">
-              {{ isDrillPaused ? 'Drill Paused' : 'Clock Running — Maintain Strict Cadence' }}
+              {{ precisionTimer.isPaused.value ? 'Drill Paused' : 'Clock Running — Maintain Strict Cadence' }}
             </span>
           </div>
 
+          <!-- Speed banner in running drill for roadwork/treadmill -->
+          <div v-if="activeDrillExercise.exercise_number === 5 && cardioMode !== 'stationary' && candidateTreadmillSpeed.mph > 0" class="w-full p-2 rounded-xl bg-slate-950 border border-cyan-500/30 text-xs font-mono text-cyan-300 flex items-center justify-between">
+            <span class="text-slate-400">Treadmill Target:</span>
+            <span class="font-bold">≥ {{ candidateTreadmillSpeed.display }}</span>
+          </div>
+
           <!-- Controls -->
-          <div class="flex gap-3 w-full pt-2">
+          <div class="flex gap-3 w-full pt-1">
             <button
               type="button"
               @click="toggleDrillPause"
-              class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider transition cursor-pointer"
+              class="flex-1 py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wider transition cursor-pointer"
+              :class="precisionTimer.isPaused.value ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-white'"
             >
-              {{ isDrillPaused ? 'Resume Clock' : 'Pause Clock' }}
+              {{ precisionTimer.isPaused.value ? '▶ Resume Clock' : '⏸ Pause Clock' }}
             </button>
 
             <button
               type="button"
               @click="finishDrillEarly"
-              class="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider transition cursor-pointer shadow"
+              class="flex-1 py-3 px-4 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs uppercase tracking-wider transition cursor-pointer shadow"
             >
               Finish Drill Early ✓
             </button>
@@ -1038,7 +1239,7 @@ const severityColour = computed(() => {
             Drill Complete!
           </h4>
           <p class="text-xs text-slate-400">
-            Enter the exact repetitions completed within the official time envelope:
+            Confirm your recorded performance within the official time envelope:
           </p>
 
           <!-- Input for Movements 1 to 4 or Stationary 5 -->
@@ -1066,7 +1267,10 @@ const severityColour = computed(() => {
           </div>
 
           <!-- Input for Cardio Run/Walk (mm:ss) -->
-          <div v-else class="flex items-center justify-center gap-2 py-2">
+          <div v-else class="flex flex-col items-center justify-center gap-2 py-2">
+            <div class="text-[11px] font-mono text-cyan-400 font-bold">
+              Elapsed Time Captured: {{ drillRecordedMin }}m {{ drillRecordedSec }}s
+            </div>
             <div class="flex items-center bg-slate-950 border-2 border-cyan-500 rounded-2xl px-4 py-2">
               <input
                 v-model.number="drillRecordedMin"
