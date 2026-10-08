@@ -78,17 +78,38 @@ if [[ "$MODE" == "remote" ]]; then
     install -m 755 target/release/fivebx-server ../fivebx-server
     cd ..
 
-    echo "🔄 Fast restart of service on port '"${SERVICE_PORT}"'..."
-    PID=$(lsof -t -i :'"${SERVICE_PORT}"' || true)
-    if [ -n "$PID" ]; then
-      kill -15 "$PID" 2>/dev/null || kill -9 "$PID" 2>/dev/null || true
-      sleep 1
+    echo "🔄 Restarting fivebx systemd user service..."
+    mkdir -p ~/.config/systemd/user
+    if [ ! -f ~/.config/systemd/user/fivebx.service ]; then
+      cat << 'SERVICEDEF' > ~/.config/systemd/user/fivebx.service
+[Unit]
+Description=Royal Canadian Air Force 5BX Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/matthew/5bx-web
+ExecStart=/home/matthew/5bx-web/fivebx-server
+Restart=always
+RestartSec=3
+EnvironmentFile=/home/matthew/5bx-web/.env
+
+[Install]
+WantedBy=default.target
+SERVICEDEF
+      systemctl --user daemon-reload
+      systemctl --user enable fivebx
     fi
 
-    echo "🚀 Starting 5bx service on port '"${SERVICE_PORT}"'..."
-    nohup ./fivebx-server > fivebx.log 2>&1 &
-    sleep 2
-    echo "✅ 5BX Server process started successfully!"
+    systemctl --user daemon-reload
+    systemctl --user restart fivebx
+    sleep 1
+    if systemctl --user is-active --quiet fivebx; then
+      echo "✅ 5BX Server process started successfully under systemd!"
+    else
+      systemctl --user status fivebx --no-pager
+      exit 1
+    fi
   '
 
 else
@@ -124,18 +145,38 @@ else
       fi
     fi
 
-    echo "🔄 Stopping existing service on port '"${SERVICE_PORT}"'..."
-    PID=$(lsof -t -i :'"${SERVICE_PORT}"' || true)
-    if [ -n "$PID" ]; then
-      kill -15 "$PID" 2>/dev/null || kill -9 "$PID" 2>/dev/null || true
-      sleep 2
+    echo "🔄 Restarting fivebx systemd user service..."
+    mkdir -p ~/.config/systemd/user
+    if [ ! -f ~/.config/systemd/user/fivebx.service ]; then
+      cat << 'SERVICEDEF' > ~/.config/systemd/user/fivebx.service
+[Unit]
+Description=Royal Canadian Air Force 5BX Web Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/matthew/5bx-web
+ExecStart=/home/matthew/5bx-web/fivebx-server
+Restart=always
+RestartSec=3
+EnvironmentFile=/home/matthew/5bx-web/.env
+
+[Install]
+WantedBy=default.target
+SERVICEDEF
+      systemctl --user daemon-reload
+      systemctl --user enable fivebx
     fi
 
-    echo "🚀 Starting 5bx service on port '"${SERVICE_PORT}"'..."
-
-    nohup ./fivebx-server > fivebx.log 2>&1 &
-    sleep 2
-    echo "✅ 5BX Server process started successfully!"
+    systemctl --user daemon-reload
+    systemctl --user restart fivebx
+    sleep 1
+    if systemctl --user is-active --quiet fivebx; then
+      echo "✅ 5BX Server process started successfully under systemd!"
+    else
+      systemctl --user status fivebx --no-pager
+      exit 1
+    fi
   '
   rm -f /tmp/fivebx-server.gz
 fi
