@@ -204,32 +204,76 @@ pub fn evaluate_diagnostic_placement(
         }
     }
 
-    // If strength_reps cleared all 12 levels in candidate chart and candidate_chart < 6
-    let (final_s_chart, final_s_level) = if s_qualified && best_s_level == 12 && target_chart < 6 {
-        (target_chart + 1, 1)
+    // Determine Strength placement:
+    // If qualified:
+    //   - Cleared Level 12 and target_chart < 6 -> (target_chart + 1, 1)
+    //   - Otherwise -> (target_chart, best_s_level)
+    // If not qualified (failed Level 1):
+    //   - target_chart > 1 -> demote to (target_chart - 1, 12)
+    //   - target_chart == 1 -> floor at (1, 1)
+    let (final_s_chart, final_s_level) = if s_qualified {
+        if best_s_level == 12 && target_chart < 6 {
+            (target_chart + 1, 1)
+        } else {
+            (target_chart, best_s_level)
+        }
+    } else if target_chart > 1 {
+        (target_chart - 1, 12)
     } else {
-        (target_chart, best_s_level)
+        (1, 1)
     };
 
-    let (final_c_chart, final_c_level) = if c_qualified && best_c_level == 12 && target_chart < 6 {
-        (target_chart + 1, 1)
+    // Determine Cardio placement:
+    // If qualified:
+    //   - Cleared Level 12 and target_chart < 6 -> (target_chart + 1, 1)
+    //   - Otherwise -> (target_chart, best_c_level)
+    // If not qualified (failed Level 1):
+    //   - target_chart > 1 -> demote to (target_chart - 1, 12)
+    //   - target_chart == 1 -> floor at (1, 1)
+    let (final_c_chart, final_c_level) = if c_qualified {
+        if best_c_level == 12 && target_chart < 6 {
+            (target_chart + 1, 1)
+        } else {
+            (target_chart, best_c_level)
+        }
+    } else if target_chart > 1 {
+        (target_chart - 1, 12)
     } else {
-        (target_chart, best_c_level)
+        (1, 1)
     };
 
     let s_disp = format!("Chart {} • Level {} ({})", final_s_chart, final_s_level, get_level_display(final_s_level));
     let c_disp = format!("Chart {} • Level {} ({})", final_c_chart, final_c_level, get_level_display(final_c_level));
 
-    let summary = if s_qualified && c_qualified {
-        if best_s_level == 12 && target_chart < 6 {
-            format!("Outstanding performance: you cleared Chart {} standards! Recommended starting at {}.", target_chart, s_disp)
-        } else {
-            format!("Diagnostic Placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+    let summary = match (s_qualified, c_qualified) {
+        (true, true) => {
+            if best_s_level == 12 && best_c_level == 12 && target_chart < 6 {
+                format!("Outstanding performance: you cleared all Chart {} standards! Recommended starting at {}.", target_chart, s_disp)
+            } else {
+                format!("Diagnostic placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+            }
         }
-    } else if !s_qualified && target_chart > 1 {
-        format!("Performance below Chart {} Level 1 threshold. Recommended baseline: Chart {} Level 12.", target_chart, target_chart - 1)
-    } else {
-        format!("Diagnostic Placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+        (false, true) => {
+            if target_chart > 1 {
+                format!("Strength performance below Chart {} Level 1 threshold (calibrated to {}). Cardio calibrated to {}.", target_chart, s_disp, c_disp)
+            } else {
+                format!("Diagnostic placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+            }
+        }
+        (true, false) => {
+            if target_chart > 1 {
+                format!("Strength calibrated to {}. Cardio performance below Chart {} Level 1 threshold (calibrated to {}).", s_disp, target_chart, c_disp)
+            } else {
+                format!("Diagnostic placement calibrated Strength to {} and Cardio to {}.", s_disp, c_disp)
+            }
+        }
+        (false, false) => {
+            if target_chart > 1 {
+                format!("Performance below Chart {} Level 1 threshold across both tracks. Recommended baseline: Chart {} Level 12 (A+).", target_chart, target_chart - 1)
+            } else {
+                format!("Diagnostic placement calibrated to baseline: Chart 1 Level 1 (D-).")
+            }
+        }
     };
 
     DiagnosticPlacementResult {
@@ -721,5 +765,19 @@ mod tests {
         assert_eq!(res2.strength_level, 1);
         assert_eq!(res2.cardio_chart, 2);
         assert_eq!(res2.cardio_level, 1);
+
+        // Failing Level 1 of Chart 2 across both tracks -> demote to Chart 1 Level 12 (A+)
+        let res3 = evaluate_diagnostic_placement(2, &[0, 0, 0, 0], "stationary", 0, 0, &all_charts);
+        assert_eq!(res3.strength_chart, 1);
+        assert_eq!(res3.strength_level, 12);
+        assert_eq!(res3.cardio_chart, 1);
+        assert_eq!(res3.cardio_level, 12);
+
+        // Split qualification: failing strength on Chart 2, but clearing cardio Level 1 on Chart 2
+        let res4 = evaluate_diagnostic_placement(2, &[0, 0, 0, 0], "stationary", 305, 0, &all_charts);
+        assert_eq!(res4.strength_chart, 1);
+        assert_eq!(res4.strength_level, 12);
+        assert_eq!(res4.cardio_chart, 2);
+        assert_eq!(res4.cardio_level, 1);
     }
 }

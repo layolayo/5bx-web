@@ -32,6 +32,18 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Universal suppression of browser number input stepper spin buttons */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 /* Cockpit Glassmorphism Panel */
 .glass-panel {
   background: rgba(15, 23, 42, 0.75);

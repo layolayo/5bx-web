@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { WorkoutSessionHistory } from '../types';
 import { updateSessionNotes, deleteSession } from '../api';
 
@@ -17,10 +17,21 @@ const emit = defineEmits<{
 const editNotes = ref(props.session.notes || '');
 const isSavingNotes = ref(false);
 const notesSaveSuccess = ref(false);
-const revertLevel = ref(true);
+const revertLevel = ref(false);
 const isDeleting = ref(false);
 const showDeleteConfirm = ref(false);
 const errorMessage = ref('');
+
+watch(
+  () => props.session,
+  (s) => {
+    editNotes.value = s.notes || '';
+    revertLevel.value = false;
+    showDeleteConfirm.value = false;
+    errorMessage.value = '';
+    notesSaveSuccess.value = false;
+  }
+);
 
 function formatDateTime(iso: string) {
   try {

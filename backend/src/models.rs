@@ -253,5 +253,13 @@ pub struct ApplyAssessmentRequest {
     pub cardio_level: i32,
     pub assessment_type: String, // "layoff_safe_reentry", "diagnostic_placement", "novice_start", "manual"
     pub notes: Option<String>,
+    pub candidate_chart: Option<i32>,
+    pub reps_1: Option<i32>,
+    pub reps_2: Option<i32>,
+    pub reps_3: Option<i32>,
+    pub reps_4: Option<i32>,
+    pub reps_5: Option<i32>,
+    pub cardio_mode: Option<String>,
+    pub cardio_duration_secs: Option<i32>,
 }
 

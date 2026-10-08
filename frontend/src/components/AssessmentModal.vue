@@ -48,7 +48,10 @@ async function loadInstructions() {
     const data = await fetchSystemCharts();
     if (data) {
       if (data.instructions) systemInstructions.value = data.instructions;
-      if (data.charts) systemCharts.value = data.charts;
+      if (data.charts) {
+        systemCharts.value = data.charts;
+        syncCardioPresets(cardioMode.value);
+      }
     }
   } catch (e) {
     console.error('Failed to load system instructions:', e);
@@ -63,7 +66,46 @@ const ex4Reps = ref<number>(8);
 const cardioMode = ref<'stationary' | 'run' | 'walk'>('stationary');
 const cardioReps = ref<number>(250);
 const cardioMin = ref<number>(8);
-const cardioSec = ref<number>(30);
+const cardioSec = ref<number>(45);
+
+function syncCardioPresets(mode: 'stationary' | 'run' | 'walk') {
+  if (mode === 'walk') {
+    const lastWalk = getLastPerformance(props.history || [], 5, 'walk');
+    if (lastWalk && lastWalk.durationSec && lastWalk.durationSec > 0) {
+      cardioMin.value = Math.floor(lastWalk.durationSec / 60);
+      cardioSec.value = lastWalk.durationSec % 60;
+    } else {
+      const targetSec = candidateCardioEntryRow.value?.ex5_walk || (candidateChart.value === 1 ? 1260 : 1740);
+      cardioMin.value = Math.floor(targetSec / 60);
+      cardioSec.value = targetSec % 60;
+    }
+  } else if (mode === 'run') {
+    const lastRun = getLastPerformance(props.history || [], 5, 'run');
+    if (lastRun && lastRun.durationSec && lastRun.durationSec > 0) {
+      cardioMin.value = Math.floor(lastRun.durationSec / 60);
+      cardioSec.value = lastRun.durationSec % 60;
+    } else {
+      const targetSec = candidateCardioEntryRow.value?.ex5_run || (candidateChart.value === 1 ? 480 : 525);
+      cardioMin.value = Math.floor(targetSec / 60);
+      cardioSec.value = targetSec % 60;
+    }
+  } else if (mode === 'stationary') {
+    const lastStat = getLastPerformance(props.history || [], 5, 'stationary');
+    if (lastStat && lastStat.reps && lastStat.reps > 0) {
+      cardioReps.value = lastStat.reps;
+    } else {
+      cardioReps.value = candidateCardioEntryRow.value?.ex5 || 250;
+    }
+  }
+}
+
+watch(cardioMode, (newMode) => {
+  syncCardioPresets(newMode);
+});
+
+watch(candidateChart, () => {
+  syncCardioPresets(cardioMode.value);
+});
 
 // Candidate cardio distance & pace calculations
 const candidateCardioDistanceMiles = computed(() => {
@@ -391,6 +433,7 @@ async function handleApplyBenchmark() {
   try {
     isApplying.value = true;
     errorMessage.value = '';
+    const durationSecs = cardioMode.value === 'stationary' ? 0 : (Number(cardioMin.value) || 0) * 60 + (Number(cardioSec.value) || 0);
     await applyAssessment({
       strength_chart: placementResult.value.strength_chart,
       strength_level: placementResult.value.strength_level,
@@ -398,6 +441,14 @@ async function handleApplyBenchmark() {
       cardio_level: placementResult.value.cardio_level,
       assessment_type: 'diagnostic_placement',
       notes: `Calibrated via Chart ${candidateChart.value} Diagnostic Benchmark: Strength ${placementResult.value.strength_display}, Cardio ${placementResult.value.cardio_display}.`,
+      candidate_chart: candidateChart.value,
+      reps_1: Number(ex1Reps.value) || 0,
+      reps_2: Number(ex2Reps.value) || 0,
+      reps_3: Number(ex3Reps.value) || 0,
+      reps_4: Number(ex4Reps.value) || 0,
+      reps_5: cardioMode.value === 'stationary' ? Number(cardioReps.value) || 0 : 0,
+      cardio_mode: cardioMode.value,
+      cardio_duration_secs: durationSecs,
     });
     emit('applied');
     emit('close');
@@ -972,13 +1023,13 @@ const severityColour = computed(() => {
                 </div>
 
                 <div v-else class="flex items-center gap-1.5">
-                  <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2 py-1">
+                  <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl px-2.5 py-1.5 focus-within:border-cyan-500 transition-colors">
                     <input
                       v-model.number="cardioMin"
                       type="number"
                       min="0"
                       max="59"
-                      class="w-8 bg-transparent text-white font-mono font-bold text-center focus:outline-none"
+                      class="w-10 bg-transparent text-white font-mono font-black text-sm text-center focus:outline-none"
                     />
                     <span class="text-slate-500 text-xs font-bold px-0.5">m</span>
                     <span class="text-slate-500 font-bold">:</span>
@@ -987,7 +1038,7 @@ const severityColour = computed(() => {
                       type="number"
                       min="0"
                       max="59"
-                      class="w-8 bg-transparent text-white font-mono font-bold text-center focus:outline-none"
+                      class="w-10 bg-transparent text-white font-mono font-black text-sm text-center focus:outline-none"
                     />
                     <span class="text-slate-500 text-xs font-bold px-0.5">s</span>
                   </div>

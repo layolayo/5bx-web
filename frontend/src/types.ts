@@ -197,5 +197,13 @@ export interface ApplyAssessmentPayload {
   cardio_level: number;
   assessment_type: string;
   notes?: string;
+  candidate_chart?: number;
+  reps_1?: number;
+  reps_2?: number;
+  reps_3?: number;
+  reps_4?: number;
+  reps_5?: number;
+  cardio_mode?: string;
+  cardio_duration_secs?: number;
 }
 

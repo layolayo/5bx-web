@@ -174,18 +174,38 @@ pub async fn apply_assessment(
         )
     });
 
+    let reps_1 = payload.reps_1.unwrap_or(0);
+    let reps_2 = payload.reps_2.unwrap_or(0);
+    let reps_3 = payload.reps_3.unwrap_or(0);
+    let reps_4 = payload.reps_4.unwrap_or(0);
+    let reps_5 = payload.reps_5.unwrap_or(0);
+    let cardio_mode = payload.cardio_mode.unwrap_or_else(|| "stationary".to_string());
+    let cardio_duration_secs = payload.cardio_duration_secs.unwrap_or(0);
+
+    let baseline_strength_chart = payload.candidate_chart.unwrap_or(s_chart);
+    let baseline_strength_level = if payload.candidate_chart.is_some() { 1 } else { s_level };
+    let baseline_cardio_chart = payload.candidate_chart.unwrap_or(c_chart);
+    let baseline_cardio_level = if payload.candidate_chart.is_some() { 1 } else { c_level };
+
     let _ = sqlx::query(
         r#"
         INSERT INTO workout_sessions 
-        (user_id, strength_chart, strength_level, cardio_chart, cardio_level, verdict_strength, verdict_cardio, overall_status, notes)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        (user_id, strength_chart, strength_level, cardio_chart, cardio_level, reps_1, reps_2, reps_3, reps_4, reps_5, cardio_mode, cardio_duration_secs, verdict_strength, verdict_cardio, overall_status, notes)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
         "#,
     )
     .bind(auth.user_id)
-    .bind(s_chart)
-    .bind(s_level)
-    .bind(c_chart)
-    .bind(c_level)
+    .bind(baseline_strength_chart)
+    .bind(baseline_strength_level)
+    .bind(baseline_cardio_chart)
+    .bind(baseline_cardio_level)
+    .bind(reps_1)
+    .bind(reps_2)
+    .bind(reps_3)
+    .bind(reps_4)
+    .bind(reps_5)
+    .bind(cardio_mode)
+    .bind(cardio_duration_secs)
     .bind(format!("Calibrated to C{} {}", s_chart, get_level_display(s_level)))
     .bind(format!("Calibrated to C{} {}", c_chart, get_level_display(c_level)))
     .bind(overall_status)
