@@ -108,7 +108,7 @@ function submitRegister() {
             v-model="username"
             type="text"
             required
-            placeholder="e.g. Matthew or matthew@5bx.local"
+            placeholder="e.g. pilot or pilot@example.com"
             class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-white text-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 transition-all"
           />
         </div>

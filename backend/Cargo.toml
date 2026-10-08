@@ -2,7 +2,7 @@
 name = "fivebx-server"
 version = "0.1.0"
 edition = "2021"
-authors = ["Matthew <layolayo>"]
+authors = ["5BX Project Team"]
 description = "Royal Canadian Air Force 5BX Fitness Plan Web Application Server"
 
 [dependencies]
