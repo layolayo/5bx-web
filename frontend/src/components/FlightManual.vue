@@ -534,7 +534,10 @@ const exerciseGuides: Record<number, ExerciseGuideDetail> = {
             <span>🧭</span> Why Diagnostic Re-Assessment Differs from Daily Missions
           </div>
           <p class="text-xs text-slate-300 leading-relaxed">
-            When you enter the <strong>Diagnostic Placement Assessment</strong> ("Test Current Fitness"), you are sitting a comprehensive placement exam against an entire target chart. Because this test is used to calibrate an entry ladder, it requires all 4 strength exercises to clear the entry standard simultaneously. If an existing pilot takes the test and misses one exercise, the system now provides an option to <strong>Retain Active Rung</strong> under the 3-strikes grace doctrine rather than forcing an instant recalibration.
+            When you enter the <strong>Diagnostic Placement Assessment</strong> ("Test Current Fitness"), you are sitting a comprehensive placement exam against an entire target chart. Because this test is used to calibrate an entry ladder, it requires all 4 strength exercises to clear the entry standard simultaneously. If an enrolled pilot sits the test and misses one exercise, the system provides an action button to <strong>Log Telemetry & Keep Active Chart</strong> under the 3-strikes grace doctrine, rather than forcing an instant demotion.
+          </p>
+          <p class="text-xs text-slate-400 leading-relaxed">
+            <em>Note:</em> This diagnostic grace option is distinct from the <strong>Revert pilot rung level</strong> safety checkbox found in the Flight Log when deleting an erroneous mission entry.
           </p>
         </div>
       </div>
