@@ -251,25 +251,28 @@ const movements = [
     <!-- Interactive Age Standards Explorer -->
     <section class="max-w-6xl mx-auto px-4 py-12 border-t border-slate-800/80">
       <div class="bg-gradient-to-br from-slate-900 via-slate-850 to-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-2xl">
-        <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 mb-8">
-          <div>
-            <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest block mb-1">RCAF Calibration Standard</span>
-            <h2 class="text-2xl sm:text-3xl font-black text-white uppercase">What Is Your Physical Goal?</h2>
-            <p class="text-slate-300 text-xs sm:text-sm mt-1">
-              Select your age bracket to inspect your official daily maintenance target and Flying Crew benchmark.
-            </p>
-          </div>
+        <!-- Section Header -->
+        <div class="mb-6">
+          <span class="text-xs font-bold text-emerald-400 uppercase tracking-widest block mb-1">RCAF Calibration Standard</span>
+          <h2 class="text-2xl sm:text-3xl font-black text-white uppercase">What Is Your Physical Goal?</h2>
+          <p class="text-slate-300 text-xs sm:text-sm mt-1">
+            Select your age bracket to inspect your official daily maintenance target and Flying Crew benchmark.
+          </p>
+        </div>
 
-          <!-- Age Range Switcher Buttons -->
-          <div class="flex flex-wrap gap-1.5 bg-slate-950/70 p-1.5 rounded-2xl border border-slate-800">
+        <!-- Dedicated Segmented Age Control Bar -->
+        <div class="bg-slate-950/80 p-1.5 rounded-2xl border border-slate-800 shadow-inner mb-8">
+          <div class="grid grid-cols-4 sm:grid-cols-8 gap-1.5 sm:gap-2">
             <button
               v-for="(val, key) in ageStandards"
               :key="key"
               @click="selectedAge = key"
-              class="px-3 py-1.5 text-xs font-bold rounded-xl transition-all cursor-pointer"
-              :class="selectedAge === key ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20' : 'text-slate-400 hover:text-white'"
+              class="py-2.5 px-1 sm:px-2 rounded-xl transition-all cursor-pointer text-center flex items-center justify-center select-none"
+              :class="selectedAge === key
+                ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25 font-black ring-1 ring-cyan-400'
+                : 'text-slate-400 hover:text-white hover:bg-slate-850 font-bold'"
             >
-              {{ val.range }}
+              <span class="text-[10px] sm:text-xs whitespace-nowrap">{{ val.range }}</span>
             </button>
           </div>
         </div>
