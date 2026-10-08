@@ -85,7 +85,7 @@ const muscleFocusMap: Record<number, string> = {
             Today's Mission Briefing
           </h2>
           <p class="text-sm text-slate-300 mt-1 max-w-xl">
-            Five calibrated movements executed strictly in sequence. Complete all required targets to earn your next ladder promotion.
+            Five calibrated exercises executed strictly in sequence. Complete all required targets to earn your next ladder promotion.
           </p>
         </div>
 
@@ -219,7 +219,7 @@ const muscleFocusMap: Record<number, string> = {
 
     <!-- Grouped Mission Rosters -->
     <div class="space-y-8">
-      <!-- 1. STRENGTH TRACK (Movements 1 to 4 - Green / Emerald Theme) -->
+      <!-- 1. STRENGTH TRACK (Exercises 1 to 4) -->
       <div class="space-y-4">
         <!-- Strength Track Header Line -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-emerald-500/40 gap-2">
@@ -229,7 +229,7 @@ const muscleFocusMap: Record<number, string> = {
               <div class="flex items-center gap-2">
                 <h3 class="text-xl font-black text-white uppercase tracking-tight">Strength Track</h3>
                 <span class="text-[10px] font-mono font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full">
-                  Movements 1 to 4 • 5 Minutes Total
+                  Exercises 1 to 4 • 5 Minutes Total
                 </span>
               </div>
               <p class="text-xs text-slate-400">Core stabilization, spinal mobility & upper body resistance. Golden Rule applies.</p>
@@ -295,7 +295,7 @@ const muscleFocusMap: Record<number, string> = {
         </div>
       </div>
 
-      <!-- 2. CARDIO TRACK (Movement 5 - Cyan Theme) -->
+      <!-- 2. CARDIO TRACK (Exercise 5) -->
       <div v-if="cardioExercise" class="space-y-4">
         <!-- Cardio Track Header Line -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b-2 border-cyan-500/40 gap-2">
@@ -305,7 +305,7 @@ const muscleFocusMap: Record<number, string> = {
               <div class="flex items-center gap-2">
                 <h3 class="text-xl font-black text-white uppercase tracking-tight">Cardio Track</h3>
                 <span class="text-[10px] font-mono font-bold bg-cyan-950/80 text-cyan-300 border border-cyan-500/40 px-2 py-0.5 rounded-full">
-                  Movement 5 • 6 Minutes / Calibrated Stride Target
+                  Exercise 5 • 6 Minutes / Calibrated Stride Target
                 </span>
               </div>
               <p class="text-xs text-slate-400">Cardiovascular conditioning & aerobic capacity. Choose stationary or running machine / outdoor.</p>

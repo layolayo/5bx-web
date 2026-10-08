@@ -33,7 +33,7 @@ const systemCharts = ref<ExerciseChartRow[]>([]);
 // Precision Wall-Clock Timer with Screen Wake Lock
 const precisionTimer = usePrecisionTimer();
 
-// Recorded Reps State for each movement (Ex 1 to 5)
+// Recorded Reps State for each exercise (Ex 1 to 5)
 const recordedReps = ref<number[]>([
   props.workout.exercises[0].target_reps,
   props.workout.exercises[1].target_reps,
@@ -198,14 +198,14 @@ function initiateExercise() {
 
         countdownTimeout = setTimeout(() => {
           stage.value = 'running';
-          precisionTimer.startTimer(secondsRemaining.value, completeMovement);
+          precisionTimer.startTimer(secondsRemaining.value, completeExercise);
         }, 600);
       }, 1000);
     }, 1000);
   }, 1000);
 }
 
-function completeMovement() {
+function completeExercise() {
   const elapsed = precisionTimer.elapsedSeconds.value;
   precisionTimer.stopTimer();
   playTransitionChime();
@@ -228,7 +228,7 @@ function adjustRep(delta: number) {
 }
 
 // Confirm recorded reps and advance
-function confirmMovementAndProceed() {
+function confirmExerciseAndProceed() {
   if (currentExerciseIndex.value < 4) {
     currentExerciseIndex.value++;
     stage.value = 'ready';
@@ -283,7 +283,7 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
           <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">
-            Movement {{ currentExerciseIndex + 1 }} of 5
+            Exercise {{ currentExerciseIndex + 1 }} of 5
           </span>
           <span class="text-slate-600">•</span>
           <span class="text-xs font-bold text-slate-300">{{ currentExercise.name }}</span>
@@ -311,7 +311,7 @@ onUnmounted(() => {
           {{ currentExercise.instructions }}
         </p>
 
-        <!-- CARDIO TRACK CHOICE INTERCEPT (On Movement 5) -->
+        <!-- CARDIO TRACK CHOICE INTERCEPT (On Exercise 5) -->
         <div v-if="currentExerciseIndex === 4" class="w-full bg-slate-950/90 p-4 rounded-2xl border border-cyan-500/30 mb-5 text-left">
           <div class="flex items-center justify-between mb-3">
             <span class="text-[11px] font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
@@ -459,11 +459,11 @@ onUnmounted(() => {
           class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 active:scale-[0.98] text-slate-950 font-black text-base uppercase tracking-wider shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2.5 transition-transform cursor-pointer"
         >
           <span class="text-xl">🟢</span>
-          <span>INITIATE MOVEMENT (Start Countdown)</span>
+          <span>INITIATE EXERCISE (Start Countdown)</span>
         </button>
 
         <button
-          @click="completeMovement"
+          @click="completeExercise"
           class="mt-3 text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer"
         >
           Already completed? Enter reps directly →
@@ -499,7 +499,7 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
           <span class="w-2.5 h-2.5 rounded-full bg-cyan-400 animate-pulse"></span>
           <span class="text-xs font-bold uppercase tracking-wider text-cyan-400">
-            Movement {{ currentExerciseIndex + 1 }} of 5
+            Exercise {{ currentExerciseIndex + 1 }} of 5
           </span>
           <span class="text-slate-600">•</span>
           <span class="text-xs font-bold text-slate-300">{{ currentExercise.name }}</span>
@@ -593,7 +593,7 @@ onUnmounted(() => {
             {{ precisionTimer.isPaused.value ? '▶ Resume' : '⏸ Pause' }}
           </button>
           <button
-            @click="completeMovement"
+            @click="completeExercise"
             class="flex-1 py-3.5 rounded-xl font-black text-sm uppercase tracking-wider bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-md shadow-cyan-500/20 transition-all cursor-pointer"
           >
             I'm Done Early →
@@ -612,7 +612,7 @@ onUnmounted(() => {
           ✓
         </div>
         <h3 class="text-xl font-black text-white uppercase tracking-tight">
-          Movement {{ currentExerciseIndex + 1 }} Complete!
+          Exercise {{ currentExerciseIndex + 1 }} Complete!
         </h3>
         <p class="text-xs text-slate-400 mt-0.5">
           Record your actual score for <strong>{{ currentExercise.name }}</strong>
@@ -771,10 +771,10 @@ onUnmounted(() => {
 
       <!-- Action Button -->
       <button
-        @click="confirmMovementAndProceed"
+        @click="confirmExerciseAndProceed"
         class="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm uppercase tracking-wider shadow-xl shadow-emerald-500/20 transition cursor-pointer"
       >
-        {{ currentExerciseIndex < 4 ? `Confirm & Proceed to Movement ${currentExerciseIndex + 2} →` : 'Confirm & Review Mission Debrief 🎖️' }}
+        {{ currentExerciseIndex < 4 ? `Confirm & Proceed to Exercise ${currentExerciseIndex + 2} →` : 'Confirm & Review Mission Debrief 🎖️' }}
       </button>
     </div>
 

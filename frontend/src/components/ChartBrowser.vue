@@ -143,14 +143,14 @@ function showExercise(exNum: number) {
       </div>
     </div>
 
-    <!-- Movement Overview: Split into Dedicated Strength (Emerald) and Cardio (Cyan) Rows -->
+    <!-- Exercise Overview: Split into Dedicated Strength and Cardio Rows -->
     <div class="space-y-6">
-      <!-- Row 1: Strength Disciplines (Movements 1 to 4 - Emerald Green) -->
+      <!-- Row 1: Strength Disciplines (Exercises 1 to 4) -->
       <div class="space-y-2.5">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-500/40"></span>
-            <h3 class="text-xs font-black uppercase tracking-wider text-emerald-300">Strength Track (Movements 1 to 4)</h3>
+            <h3 class="text-xs font-black uppercase tracking-wider text-emerald-300">Strength Track (Exercises 1 to 4)</h3>
             <span class="hidden sm:inline text-[11px] text-slate-400">• Calisthenics &amp; core mobility</span>
           </div>
           <span class="text-[10px] font-mono text-emerald-400/90 bg-emerald-950/60 border border-emerald-500/30 px-2.5 py-0.5 rounded-md">
@@ -174,7 +174,7 @@ function showExercise(exNum: number) {
         </div>
       </div>
 
-      <!-- Row 2: Cardio Disciplines (Movements 5 to 7 - Cyan) -->
+      <!-- Row 2: Cardio Disciplines (Exercise 5 Alternatives) -->
       <div class="space-y-2.5">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-2">
@@ -217,10 +217,10 @@ function showExercise(exNum: number) {
                 Rung
               </th>
               <th colspan="4" class="py-2.5 px-3 text-center font-black bg-emerald-950/50 text-emerald-300 border-b border-r border-emerald-500/30">
-                Strength Disciplines (Movements 1 to 4 • Emerald)
+                Strength Disciplines (Exercises 1 to 4)
               </th>
               <th colspan="3" class="py-2.5 px-3 text-center font-black bg-cyan-950/50 text-cyan-300 border-b border-cyan-500/30">
-                Cardio Disciplines (Aerobic Capacity • Cyan)
+                Cardio Disciplines (Aerobic Capacity)
               </th>
             </tr>
             <!-- Individual Column Headers -->
@@ -274,13 +274,13 @@ function showExercise(exNum: number) {
                 </div>
               </td>
 
-              <!-- Strength Targets (Movements 1 to 4) -->
+              <!-- Strength Targets (Exercises 1 to 4) -->
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex1 }}</td>
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex2 }}</td>
               <td class="py-3 px-3 text-slate-200 font-semibold">{{ row.ex3 }}</td>
               <td class="py-3 px-3 text-slate-200 font-semibold border-r border-slate-800/80">{{ row.ex4 }}</td>
 
-              <!-- Cardio Targets (Movements 5 to 7) -->
+              <!-- Cardio Targets (Exercise 5 Options) -->
               <td class="py-3 px-4 font-bold text-cyan-300">
                 {{ row.ex5 }}
                 <span v-if="selectedChart >= 5" class="text-[10px] text-slate-400 font-sans">+ jumps</span>
@@ -331,7 +331,7 @@ function showExercise(exNum: number) {
               class="text-[10px] font-bold uppercase tracking-wider block"
               :class="selectedExerciseDetail.exercise <= 4 ? 'text-emerald-400' : 'text-cyan-400'"
             >
-              Chart {{ selectedExerciseDetail.chart }} • Movement {{ selectedExerciseDetail.exercise }} ({{ selectedExerciseDetail.exercise <= 4 ? 'Strength Discipline' : 'Cardio Discipline' }})
+              Chart {{ selectedExerciseDetail.chart }} • Exercise {{ selectedExerciseDetail.exercise }} ({{ selectedExerciseDetail.exercise <= 4 ? 'Strength Discipline' : 'Cardio Discipline' }})
             </span>
             <h3 class="text-xl font-black text-white">{{ selectedExerciseDetail.name }}</h3>
           </div>
@@ -356,7 +356,7 @@ function showExercise(exNum: number) {
           class="w-full btn-control-primary"
           :class="selectedExerciseDetail.exercise <= 4 ? 'bg-emerald-500 hover:bg-emerald-400 text-slate-950' : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950'"
         >
-          Close Movement Details
+          Close Exercise Details
         </button>
       </div>
     </div>

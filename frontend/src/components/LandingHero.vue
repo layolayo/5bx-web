@@ -108,7 +108,7 @@ const ageStandards: Record<string, AgeStandard> = {
 
 const selectedAge = ref<string>('50-59');
 
-const movements = [
+const exercises = [
   {
     num: 1,
     name: 'Forward Bend & Stretch',
@@ -209,11 +209,11 @@ const movements = [
       </div>
     </section>
 
-    <!-- The 5 Movements Section -->
+    <!-- The 5 Exercises Section -->
     <section class="max-w-6xl mx-auto px-4 py-12 border-t border-slate-800/80">
       <div class="text-center max-w-3xl mx-auto mb-10">
         <div class="text-xs font-bold text-cyan-400 uppercase tracking-widest mb-2">The Architecture of Conditioning</div>
-        <h2 class="text-3xl sm:text-4xl font-black text-white uppercase">Five Basic Movements. Full Spectrum Fitness.</h2>
+        <h2 class="text-3xl sm:text-4xl font-black text-white uppercase">Five Basic Exercises. Full Spectrum Fitness.</h2>
         <p class="text-slate-400 text-sm sm:text-base mt-2">
           Executed strictly in sequence without rest intervals, targeting flexibility, abdominal strength, spinal extension, pushing power, and aerobic capacity.
         </p>
@@ -221,7 +221,7 @@ const movements = [
 
       <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div
-          v-for="m in movements"
+          v-for="m in exercises"
           :key="m.num"
           class="glass-panel glass-panel-hover rounded-2xl p-4 flex flex-col justify-between"
         >
@@ -235,7 +235,7 @@ const movements = [
               </span>
             </div>
 
-            <!-- Historical RCAF Movement Diagram -->
+            <!-- Historical RCAF Exercise Diagram -->
             <div class="w-full h-28 bg-white rounded-xl p-2 flex items-center justify-center mb-3 shadow-inner">
               <img :src="m.image" :alt="m.name" class="max-h-full max-w-full object-contain" />
             </div>
@@ -360,7 +360,7 @@ const movements = [
           <div class="text-2xl mb-2">⚡</div>
           <h3 class="text-base font-bold text-white mb-1">1. The Golden Rule</h3>
           <p class="text-xs text-slate-300 leading-relaxed">
-            Hit your required reps for all movements today and you earn an automatic promotion to the next sub-level tomorrow. Consistent daily effort is immediately rewarded.
+            Hit your required reps for all exercises today and you earn an automatic promotion to the next sub-level tomorrow. Consistent daily effort is immediately rewarded.
           </p>
         </div>
 

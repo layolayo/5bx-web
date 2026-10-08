@@ -16,7 +16,7 @@ const emit = defineEmits<{
   (e: 'open-assessment'): void;
 }>();
 
-const expandedMovement = ref<number | null>(null);
+const expandedExercise = ref<number | null>(null);
 const cardioChoice = ref<'stationary' | 'run' | 'walk'>('stationary');
 
 const strengthExercises = computed(() => props.workout.exercises.filter((ex) => ex.exercise_number <= 4));
@@ -44,7 +44,7 @@ const treadmillSpeed = computed(() => {
 });
 
 function toggleExpand(num: number) {
-  expandedMovement.value = expandedMovement.value === num ? null : num;
+  expandedExercise.value = expandedExercise.value === num ? null : num;
 }
 
 function formatMinutesSeconds(seconds: number) {
@@ -139,13 +139,13 @@ function formatMinutesSeconds(seconds: number) {
 
     <!-- 5-Step Mission Checklist Grouped by Track -->
     <div class="space-y-4">
-      <!-- 1. Strength Track (Steps 1 to 4 - Green / Emerald) -->
+      <!-- 1. Strength Track (Exercises 1 to 4) -->
       <div class="space-y-2">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
             <h3 class="text-xs font-black uppercase tracking-wider text-emerald-400">
-              Strength Track • Steps 1–4
+              Strength Track • Exercises 1–4
             </h3>
           </div>
           <span class="text-[10px] text-emerald-400 font-mono">Chart {{ workout.strength_chart }}</span>
@@ -155,7 +155,7 @@ function formatMinutesSeconds(seconds: number) {
           v-for="ex in strengthExercises"
           :key="ex.exercise_number"
           class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-emerald-500 rounded-2xl p-3.5 transition-all"
-          :class="{ 'border-emerald-500/40 bg-slate-900': expandedMovement === ex.exercise_number }"
+          :class="{ 'border-emerald-500/40 bg-slate-900': expandedExercise === ex.exercise_number }"
         >
           <div class="flex items-center justify-between gap-3 cursor-pointer" @click="toggleExpand(ex.exercise_number)">
             <!-- Left: Number & Name -->
@@ -180,7 +180,7 @@ function formatMinutesSeconds(seconds: number) {
           </div>
 
           <!-- Collapsible Technique Diagram & Cue -->
-          <div v-if="expandedMovement === ex.exercise_number" class="mt-3 pt-3 border-t border-slate-800 space-y-2">
+          <div v-if="expandedExercise === ex.exercise_number" class="mt-3 pt-3 border-t border-slate-800 space-y-2">
             <div class="w-full h-32 bg-white rounded-xl p-2 flex items-center justify-center border border-slate-300">
               <img :src="'/images/' + ex.image_path" :alt="ex.name" class="max-h-full max-w-full object-contain" />
             </div>
@@ -191,13 +191,13 @@ function formatMinutesSeconds(seconds: number) {
         </div>
       </div>
 
-      <!-- 2. Cardio Track (Step 5 - Cyan) -->
+      <!-- 2. Cardio Track (Exercise 5) -->
       <div v-if="cardioExercise" class="space-y-2">
         <div class="flex items-center justify-between px-1">
           <div class="flex items-center gap-1.5">
             <span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span>
             <h3 class="text-xs font-black uppercase tracking-wider text-cyan-400">
-              Cardio Track • Step 5
+              Cardio Track • Exercise 5
             </h3>
           </div>
           <span class="text-[10px] text-cyan-400 font-mono">Chart {{ workout.cardio_chart }}</span>
@@ -205,7 +205,7 @@ function formatMinutesSeconds(seconds: number) {
 
         <div
           class="bg-slate-900/90 border border-slate-800 border-l-4 border-l-cyan-500 rounded-2xl p-3.5 transition-all"
-          :class="{ 'border-cyan-500/40 bg-slate-900': expandedMovement === 5 }"
+          :class="{ 'border-cyan-500/40 bg-slate-900': expandedExercise === 5 }"
         >
           <div class="flex items-center justify-between gap-3 cursor-pointer" @click="toggleExpand(5)">
             <!-- Left: Number & Name -->
@@ -279,7 +279,7 @@ function formatMinutesSeconds(seconds: number) {
           </div>
 
           <!-- Collapsible Technique Diagram & Cue -->
-          <div v-if="expandedMovement === 5" class="mt-3 pt-3 border-t border-slate-800 space-y-2">
+          <div v-if="expandedExercise === 5" class="mt-3 pt-3 border-t border-slate-800 space-y-2">
             <div class="w-full h-32 bg-white rounded-xl p-2 flex items-center justify-center border border-slate-300">
               <img :src="'/images/' + cardioExercise.image_path" :alt="cardioExercise.name" class="max-h-full max-w-full object-contain" />
             </div>

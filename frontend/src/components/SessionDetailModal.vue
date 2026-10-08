@@ -176,7 +176,7 @@ async function handleDelete() {
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <!-- Strength Track Card (Emerald Green) -->
+          <!-- Strength Track Card -->
           <div class="bg-slate-900/90 p-3.5 rounded-xl border border-emerald-500/30 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-1.5">
@@ -194,7 +194,7 @@ async function handleDelete() {
             </div>
           </div>
 
-          <!-- Cardio Track Card (Cyan) -->
+          <!-- Cardio Track Card -->
           <div class="bg-slate-900/90 p-3.5 rounded-xl border border-cyan-500/30 flex flex-col justify-between">
             <div>
               <div class="flex items-center justify-between mb-1.5">

@@ -88,11 +88,11 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
       <!-- Current Status Banner -->
       <div class="grid grid-cols-2 gap-3 mb-3 bg-gray-100 p-2 border border-gray-400 rounded text-xs">
         <div>
-          <span class="font-bold">Strength Track (Movements 1–4):</span>
+          <span class="font-bold">Strength Track (Exercises 1–4):</span>
           <span class="ml-2 font-mono font-bold bg-white px-2 py-0.5 border border-gray-300 rounded">{{ workout.strength_display }}</span>
         </div>
         <div>
-          <span class="font-bold">Cardio Track (Movement 5):</span>
+          <span class="font-bold">Cardio Track (Exercise 5):</span>
           <span class="ml-2 font-mono font-bold bg-white px-2 py-0.5 border border-gray-300 rounded">{{ workout.cardio_display }}</span>
         </div>
       </div>
@@ -139,12 +139,12 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
 
             <!-- Target Standard Column -->
             <td class="p-2 border border-gray-400">
-              <!-- Movements 1 to 4: Strength -->
+              <!-- Exercises 1 to 4: Strength -->
               <div v-if="!ex.is_cardio" class="font-bold text-sm text-center">
                 {{ ex.target_reps }} reps
               </div>
 
-              <!-- Movement 5: Cardio Disciplines & Running Machine Speeds -->
+              <!-- Exercise 5: Cardio Disciplines & Running Machine Speeds -->
               <div v-else class="text-[10px] leading-snug space-y-1.5">
                 <!-- Option 1: Stationary Run -->
                 <div class="bg-gray-50 border border-gray-200 rounded p-1">
@@ -183,13 +183,13 @@ function calcTreadmillSpeed(miles: number, seconds: number): { mph: string; kph:
 
             <!-- Actual Performance Column -->
             <td class="p-2 border border-gray-400">
-              <!-- Movements 1 to 4: Write-in Box -->
+              <!-- Exercises 1 to 4: Write-in Box -->
               <div v-if="!ex.is_cardio" class="flex items-center justify-center gap-1.5">
                 <div class="print-write-box border-2 border-dashed border-gray-400 rounded h-8 w-16"></div>
                 <span class="text-[11px] text-gray-600 font-medium">reps</span>
               </div>
 
-              <!-- Movement 5: Discipline Selection Write-in Box -->
+              <!-- Exercise 5: Discipline Selection Write-in Box -->
               <div v-else class="text-[10px] space-y-2">
                 <div class="flex items-center gap-1.5">
                   <input type="checkbox" class="w-3.5 h-3.5 border-gray-500 rounded" />

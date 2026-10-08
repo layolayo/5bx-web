@@ -652,7 +652,7 @@ const severityColour = computed(() => {
             <div class="flex items-center justify-between">
               <div>
                 <span class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
-                  <span>💪</span> Strength Track (Movements 1 to 4)
+                  <span>💪</span> Strength Track (Exercises 1 to 4)
                 </span>
                 <span class="text-[10px] text-slate-400">Perform maximum comfortable repetitions within designated time envelopes.</span>
               </div>
@@ -661,7 +661,7 @@ const severityColour = computed(() => {
               </span>
             </div>
 
-            <!-- 4 Movement Cards -->
+            <!-- 4 Exercise Cards -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               <!-- Exercise 1 -->
               <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 flex flex-col justify-between gap-3">
@@ -906,7 +906,7 @@ const severityColour = computed(() => {
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
                 <span class="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2">
-                  <span>🏃</span> Cardio Track (Movement 5)
+                  <span>🏃</span> Cardio Track (Exercise 5)
                 </span>
                 <span class="text-[10px] text-slate-400">Select stationary running or timed track/treadmill discipline.</span>
               </div>
@@ -1095,7 +1095,7 @@ const severityColour = computed(() => {
     </div>
 
     <!-- ========================================================================= -->
-    <!-- INTERACTIVE MOVEMENT DRILL TIMER MODAL OVERLAY                            -->
+    <!-- INTERACTIVE EXERCISE DRILL TIMER MODAL OVERLAY                            -->
     <!-- ========================================================================= -->
     <div
       v-if="activeDrillExercise"
@@ -1110,10 +1110,10 @@ const severityColour = computed(() => {
           ✕
         </button>
 
-        <!-- Movement Title & Mission Envelope -->
+        <!-- Exercise Title & Mission Envelope -->
         <div>
           <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-400 bg-cyan-950/80 border border-cyan-500/30 px-2.5 py-0.5 rounded-full">
-            Movement {{ activeDrillExercise.exercise_number }} • Candidate Chart {{ candidateChart }}
+            Exercise {{ activeDrillExercise.exercise_number }} • Candidate Chart {{ candidateChart }}
           </span>
           <h3 class="text-xl font-black text-white uppercase tracking-tight mt-1.5">
             {{ activeDrillExercise.name }}
@@ -1181,7 +1181,7 @@ const severityColour = computed(() => {
           <div class="text-7xl font-black text-cyan-400 animate-pulse tabular-nums">
             {{ drillCountdown }}
           </div>
-          <p class="text-xs text-slate-400">Assume position and prepare for movement initiation.</p>
+          <p class="text-xs text-slate-400">Assume position and prepare for exercise initiation.</p>
         </div>
 
         <!-- STAGE 3: RUNNING DRILL TIMER -->
@@ -1242,7 +1242,7 @@ const severityColour = computed(() => {
             Confirm your recorded performance within the official time envelope:
           </p>
 
-          <!-- Input for Movements 1 to 4 or Stationary 5 -->
+          <!-- Input for Exercises 1 to 4 or Stationary 5 -->
           <div v-if="activeDrillExercise.exercise_number < 5 || cardioMode === 'stationary'" class="flex items-center justify-center gap-3 py-2">
             <button
               type="button"
